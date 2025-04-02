@@ -82,7 +82,10 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Login'), backgroundColor: Colors.green),
+      appBar: AppBar(
+        title: const Text('Login'),
+        backgroundColor: Colors.lightGreen,
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -127,6 +130,7 @@ class MyHomePage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(title),
+        backgroundColor: Colors.lightGreen,
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
@@ -215,7 +219,10 @@ class _SecondPageState extends State<SecondPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Voeg item Toe')),
+      appBar: AppBar(
+        title: const Text('Voeg item Toe'),
+        backgroundColor: Colors.lightGreen,
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
