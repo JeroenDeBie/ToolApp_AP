@@ -102,10 +102,10 @@ class _AddItemsState extends State<AddItems> {
               onPressed: () {
                 String description = descriptionController.text;
                 String price = currencyFormat.format(
-                  double.tryParse(
+                  (double.tryParse(
                         priceController.text.replaceAll(RegExp(r'[^0-9.]'), ''),
                       ) ??
-                      0,
+                      0) / 100
                 ); // Ensure proper formatting
                 Navigator.pop(context, {
                   'description': description,
