@@ -7,7 +7,6 @@ import 'package:intl/intl.dart';
 import 'firebase_options.dart';
 import 'productDetails.dart';
 
-
 class AddItems extends StatefulWidget {
   const AddItems({super.key});
 
@@ -20,6 +19,7 @@ class _AddItemsState extends State<AddItems> {
   final TextEditingController priceController = TextEditingController();
   Uint8List? _imageBytes;
   final ImagePicker _picker = ImagePicker();
+  String _availability = 'beschikbaar'; // Default value
 
   final NumberFormat currencyFormat = NumberFormat.currency(
     locale: 'nl_NL',
@@ -89,6 +89,29 @@ class _AddItemsState extends State<AddItems> {
               onChanged: _formatPriceInput,
             ),
             const SizedBox(height: 16),
+            DropdownButtonFormField<String>(
+              value: _availability,
+              items: const [
+                DropdownMenuItem(
+                  value: 'beschikbaar',
+                  child: Text('Beschikbaar'),
+                ),
+                DropdownMenuItem(
+                  value: 'niet beschikbaar',
+                  child: Text('Niet Beschikbaar'),
+                ),
+              ],
+              onChanged: (value) {
+                setState(() {
+                  _availability = value!;
+                });
+              },
+              decoration: const InputDecoration(
+                labelText: 'Beschikbaarheid',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 16),
             _imageBytes != null
                 ? Image.memory(_imageBytes!, height: 150)
                 : const Text('Geen afbeelding geselecteerd'),
@@ -110,6 +133,7 @@ class _AddItemsState extends State<AddItems> {
                 Navigator.pop(context, {
                   'description': description,
                   'price': price,
+                  'availability': _availability,
                   'image': _imageBytes,
                 });
               },
@@ -121,4 +145,3 @@ class _AddItemsState extends State<AddItems> {
     );
   }
 }
-
