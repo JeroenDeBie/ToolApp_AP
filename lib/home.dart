@@ -8,7 +8,7 @@ import 'firebase_options.dart';
 import 'productDetails.dart';
 import 'login.dart';
 import 'addItems.dart';
-
+import 'dashboard.dart';
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
@@ -36,6 +36,15 @@ class _MyHomePageState extends State<MyHomePage> {
         title: Text(widget.title),
         backgroundColor: Colors.lightGreen,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.dashboard),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const Dashboard()),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () async {
@@ -116,4 +125,3 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 }
-
