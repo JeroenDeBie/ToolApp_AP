@@ -166,28 +166,41 @@ class _MyHomePageState extends State<MyHomePage> {
                       itemBuilder: (context, index) {
                         final item = _items[index];
                         return ListTile(
-                          leading:
-                              item['image'] != null
-                                  ? Image.memory(
-                                    item['image'],
-                                    width: 70, // Increased width
-                                    height: 200, // Increased height
-                                  )
-                                  : const Icon(
-                                    Icons.image_not_supported,
-                                    size: 50,
-                                  ),
+                          leading: GestureDetector(
+                            behavior:
+                                HitTestBehavior
+                                    .translucent, // Ensure taps are detected
+                            onTap: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder:
+                                      (context) =>
+                                          ProductDetailPage(item: item),
+                                ),
+                              );
+                            },
+                            child:
+                                item['image'] != null
+                                    ? Image.memory(
+                                      item['image'],
+                                      width: 70,
+                                      height: 200,
+                                      fit:
+                                          BoxFit
+                                              .cover, // Ensure the image fits properly
+                                    )
+                                    : const Icon(
+                                      Icons.image_not_supported,
+                                      size: 50,
+                                    ),
+                          ),
                           title: Text(
                             item['description']!,
-                            style: const TextStyle(
-                              fontSize: 18,
-                            ), // Larger font size
+                            style: const TextStyle(fontSize: 18),
                           ),
                           subtitle: Text(
                             item['price']!,
-                            style: const TextStyle(
-                              fontSize: 16,
-                            ), // Larger font size
+                            style: const TextStyle(fontSize: 16),
                           ),
                         );
                       },
@@ -304,7 +317,12 @@ class _SecondPageState extends State<SecondPage> {
             ElevatedButton(
               onPressed: () {
                 String description = descriptionController.text;
-                String price = priceController.text;
+                String price = currencyFormat.format(
+                  double.tryParse(
+                        priceController.text.replaceAll(RegExp(r'[^0-9.]'), ''),
+                      ) ??
+                      0,
+                ); // Ensure proper formatting
                 Navigator.pop(context, {
                   'description': description,
                   'price': price,
@@ -313,6 +331,45 @@ class _SecondPageState extends State<SecondPage> {
               },
               child: const Text('Submit'),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class ProductDetailPage extends StatelessWidget {
+  final Map<String, dynamic> item;
+
+  const ProductDetailPage({super.key, required this.item});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Product Details'),
+        backgroundColor: Colors.lightGreen,
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            item['image'] != null
+                ? Image.memory(item['image'], height: 200)
+                : const Icon(Icons.image_not_supported, size: 100),
+            const SizedBox(height: 16),
+            Text(
+              'Beschrijving:',
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            Text(item['description']!, style: const TextStyle(fontSize: 18)),
+            const SizedBox(height: 16),
+            Text(
+              'Prijs:',
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            Text(item['price']!, style: const TextStyle(fontSize: 18)),
           ],
         ),
       ),
