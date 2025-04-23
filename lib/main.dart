@@ -1,12 +1,9 @@
-import 'dart:typed_data';
-
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
-import 'dart:io';
 import 'firebase_options.dart';
 
 void main() async {
@@ -120,16 +117,30 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 }
 
-class MyHomePage extends StatelessWidget {
+class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
 
   final String title;
 
   @override
+  _MyHomePageState createState() => _MyHomePageState();
+}
+
+class _MyHomePageState extends State<MyHomePage> {
+  final List<Map<String, dynamic>> _items =
+      []; // Updated to include dynamic for image
+
+  void _addItem(Map<String, dynamic> newItem) {
+    setState(() {
+      _items.add(newItem);
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(title),
+        title: Text(widget.title),
         backgroundColor: Colors.lightGreen,
         actions: [
           IconButton(
@@ -144,23 +155,57 @@ class MyHomePage extends StatelessWidget {
           ),
         ],
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text('Welcome to Home Page!'),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const SecondPage()),
-                );
-              },
-              child: const Text('Voeg item Toe'),
-            ),
-          ],
-        ),
+      body: Column(
+        children: [
+          Expanded(
+            child:
+                _items.isEmpty
+                    ? const Center(child: Text('Geen items toegevoegd.'))
+                    : ListView.builder(
+                      itemCount: _items.length,
+                      itemBuilder: (context, index) {
+                        final item = _items[index];
+                        return ListTile(
+                          leading:
+                              item['image'] != null
+                                  ? Image.memory(
+                                    item['image'],
+                                    width: 70, // Increased width
+                                    height: 200, // Increased height
+                                  )
+                                  : const Icon(
+                                    Icons.image_not_supported,
+                                    size: 50,
+                                  ),
+                          title: Text(
+                            item['description']!,
+                            style: const TextStyle(
+                              fontSize: 18,
+                            ), // Larger font size
+                          ),
+                          subtitle: Text(
+                            item['price']!,
+                            style: const TextStyle(
+                              fontSize: 16,
+                            ), // Larger font size
+                          ),
+                        );
+                      },
+                    ),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final newItem = await Navigator.push<Map<String, dynamic>>(
+                context,
+                MaterialPageRoute(builder: (context) => const SecondPage()),
+              );
+              if (newItem != null) {
+                _addItem(newItem);
+              }
+            },
+            child: const Text('Voeg item Toe'),
+          ),
+        ],
       ),
     );
   }
@@ -260,9 +305,11 @@ class _SecondPageState extends State<SecondPage> {
               onPressed: () {
                 String description = descriptionController.text;
                 String price = priceController.text;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Submitted: $description, €$price')),
-                );
+                Navigator.pop(context, {
+                  'description': description,
+                  'price': price,
+                  'image': _imageBytes,
+                });
               },
               child: const Text('Submit'),
             ),
