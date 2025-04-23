@@ -7,7 +7,6 @@ import 'package:intl/intl.dart';
 import 'firebase_options.dart';
 import 'productDetails.dart';
 
-
 class AddItems extends StatefulWidget {
   const AddItems({super.key});
 
@@ -20,6 +19,7 @@ class _AddItemsState extends State<AddItems> {
   final TextEditingController priceController = TextEditingController();
   Uint8List? _imageBytes;
   final ImagePicker _picker = ImagePicker();
+  String _availability = 'beschikbaar'; // Default value
 
   final NumberFormat currencyFormat = NumberFormat.currency(
     locale: 'nl_NL',
@@ -32,8 +32,7 @@ class _AddItemsState extends State<AddItems> {
       '',
     ); // Verwijder alles behalve cijfers
     if (cleanedValue.isNotEmpty) {
-      double parsedValue =
-          double.parse(cleanedValue) / 100; // Zorg voor decimalen
+      double parsedValue = double.parse(cleanedValue); // Zorg voor decimalen
       String formattedValue = currencyFormat.format(parsedValue);
       priceController.value = TextEditingValue(
         text: formattedValue,
@@ -89,6 +88,29 @@ class _AddItemsState extends State<AddItems> {
               onChanged: _formatPriceInput,
             ),
             const SizedBox(height: 16),
+            DropdownButtonFormField<String>(
+              value: _availability,
+              items: const [
+                DropdownMenuItem(
+                  value: 'beschikbaar',
+                  child: Text('Beschikbaar'),
+                ),
+                DropdownMenuItem(
+                  value: 'niet beschikbaar',
+                  child: Text('Niet Beschikbaar'),
+                ),
+              ],
+              onChanged: (value) {
+                setState(() {
+                  _availability = value!;
+                });
+              },
+              decoration: const InputDecoration(
+                labelText: 'Beschikbaarheid',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 16),
             _imageBytes != null
                 ? Image.memory(_imageBytes!, height: 150)
                 : const Text('Geen afbeelding geselecteerd'),
@@ -101,15 +123,14 @@ class _AddItemsState extends State<AddItems> {
             ElevatedButton(
               onPressed: () {
                 String description = descriptionController.text;
-                String price = currencyFormat.format(
-                  (double.tryParse(
-                        priceController.text.replaceAll(RegExp(r'[^0-9.]'), ''),
-                      ) ??
-                      0) / 100
-                ); // Ensure proper formatting
+                String price = priceController.text.replaceAll(
+                  RegExp(r'[^0-9.]'),
+                  '',
+                ); // Remove formatting without scaling
                 Navigator.pop(context, {
                   'description': description,
                   'price': price,
+                  'availability': _availability,
                   'image': _imageBytes,
                 });
               },
@@ -121,4 +142,3 @@ class _AddItemsState extends State<AddItems> {
     );
   }
 }
-

@@ -38,6 +38,12 @@ class ProductDetailPage extends StatelessWidget {
               style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             Text(item['price']!, style: const TextStyle(fontSize: 18)),
+            const SizedBox(height: 16),
+            Text(
+              'Beschikbaarheid:',
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            Text(item['availability']!, style: const TextStyle(fontSize: 18)),
           ],
         ),
       ),
