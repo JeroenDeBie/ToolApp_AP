@@ -1,11 +1,9 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
-import 'firebase_options.dart';
-import 'productDetails.dart';
+import 'package:flutter_application_1/map.dart';
 
 class AddItems extends StatefulWidget {
   const AddItems({super.key});
@@ -32,7 +30,7 @@ class _AddItemsState extends State<AddItems> {
       '',
     ); // Verwijder alles behalve cijfers
     if (cleanedValue.isNotEmpty) {
-      double parsedValue = double.parse(cleanedValue); // Zorg voor decimalen
+      double parsedValue = double.parse(cleanedValue) / 100; // Zorg voor decimalen
       String formattedValue = currencyFormat.format(parsedValue);
       priceController.value = TextEditingValue(
         text: formattedValue,
@@ -69,6 +67,7 @@ class _AddItemsState extends State<AddItems> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            Expanded(child: MapWidget()),
             TextField(
               controller: descriptionController,
               decoration: const InputDecoration(
@@ -123,10 +122,16 @@ class _AddItemsState extends State<AddItems> {
             ElevatedButton(
               onPressed: () {
                 String description = descriptionController.text;
-                String price = priceController.text.replaceAll(
-                  RegExp(r'[^0-9.]'),
-                  '',
-                ); // Remove formatting without scaling
+                // String price = priceController.text.replaceAll(
+                //   RegExp(r'[^0-9.]'),
+                //   '',
+                // ); // Remove formatting without scaling
+                String price = currencyFormat.format(
+                   (double.tryParse(
+                         priceController.text.replaceAll(RegExp(r'[^0-9.]'), ''),
+                       ) ??
+                       0) / 100
+                 ); // Ensure proper formatting
                 Navigator.pop(context, {
                   'description': description,
                   'price': price,
