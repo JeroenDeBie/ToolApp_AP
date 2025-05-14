@@ -50,6 +50,8 @@ class _MyHomePageState extends State<MyHomePage> {
                   (data['price'] != null)
                       ? (data['price'] as num).toDouble()
                       : 0.0, // Ensure double
+              'category':
+                  data['category'] ?? 'Geen categorie', // Fetch category
             };
           }).toList();
       setState(() {
