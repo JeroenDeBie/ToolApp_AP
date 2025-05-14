@@ -3,6 +3,7 @@ import 'dart:convert'; // Added for base64 decoding
 
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_application_1/checkbox.dart';
 import 'package:flutter_application_1/map.dart';
 import 'productDetails.dart';
 import 'login.dart';
@@ -117,7 +118,12 @@ class _MyHomePageState extends State<MyHomePage> {
       body: Column(
         children: [
           Expanded(child: MapWidget()),
-          // Expanded(child: Checkbox(value: isChecked)),
+
+          Row(children: [
+            Text("Show available items"),
+            CheckboxWidget(),
+          ]),
+
           Expanded(
             child:
                 _items.isEmpty
