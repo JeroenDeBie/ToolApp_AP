@@ -145,7 +145,7 @@ class _AddItemsState extends State<AddItems> {
                 String description = descriptionController.text;
                 double price =
                     double.tryParse(
-                      priceController.text.replaceAll(RegExp(r'[^0-9.]'), ''),
+                      priceController.text.replaceAll(RegExp(r'[^0-9]'), ''),
                     ) ??
                     0; // Parse price as a double
                 String? imageBase64 =
