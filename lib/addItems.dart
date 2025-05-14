@@ -20,6 +20,7 @@ class _AddItemsState extends State<AddItems> {
   final TextEditingController priceController = TextEditingController();
   Uint8List? _imageBytes;
   final ImagePicker _picker = ImagePicker();
+  final map = MapWidget();
   bool _availability = true; // Default value
   Categories?
   _selectedCategory; // Add a variable to store the selected category
@@ -73,7 +74,7 @@ class _AddItemsState extends State<AddItems> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Expanded(child: MapWidget()),
+            Expanded(child: map),
             TextField(
               controller: descriptionController,
               decoration: const InputDecoration(

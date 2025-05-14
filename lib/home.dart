@@ -115,6 +115,7 @@ class _MyHomePageState extends State<MyHomePage> {
       body: Column(
         children: [
           Expanded(child: MapWidget()),
+          // Expanded(child: Checkbox(value: isChecked)),
           Expanded(
             child:
                 _items.isEmpty
