@@ -52,6 +52,15 @@ class ProductDetailPage extends StatelessWidget {
                   : 'Niet Beschikbaar', // Display availability as bool
               style: const TextStyle(fontSize: 18),
             ),
+            const SizedBox(height: 16),
+            Text(
+              'Categorie:',
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            Text(
+              item['category'] ?? 'Geen categorie',
+              style: const TextStyle(fontSize: 18),
+            ),
           ],
         ),
       ),

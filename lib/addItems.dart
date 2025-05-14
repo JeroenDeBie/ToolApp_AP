@@ -6,6 +6,8 @@ import 'package:intl/intl.dart';
 import 'package:flutter_application_1/map.dart';
 import 'dart:convert';
 
+enum Categories { Kitchen, Washing, Tools, Garden, Other }
+
 class AddItems extends StatefulWidget {
   const AddItems({super.key});
 
@@ -19,6 +21,8 @@ class _AddItemsState extends State<AddItems> {
   Uint8List? _imageBytes;
   final ImagePicker _picker = ImagePicker();
   bool _availability = true; // Default value
+  Categories?
+  _selectedCategory; // Add a variable to store the selected category
 
   final NumberFormat currencyFormat = NumberFormat.currency(
     locale: 'nl_NL',
@@ -106,6 +110,26 @@ class _AddItemsState extends State<AddItems> {
               ),
             ),
             const SizedBox(height: 16),
+            DropdownButtonFormField<Categories>(
+              value: _selectedCategory,
+              items:
+                  Categories.values.map((category) {
+                    return DropdownMenuItem(
+                      value: category,
+                      child: Text(category.name),
+                    );
+                  }).toList(),
+              onChanged: (value) {
+                setState(() {
+                  _selectedCategory = value;
+                });
+              },
+              decoration: const InputDecoration(
+                labelText: 'Category',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 16),
             _imageBytes != null
                 ? Image.memory(_imageBytes!, height: 150)
                 : const Text('Geen afbeelding geselecteerd'),
@@ -131,6 +155,7 @@ class _AddItemsState extends State<AddItems> {
                   'description': description,
                   'price': price / 100, // Pass price as a double
                   'availability': _availability,
+                  'category': _selectedCategory?.name, // Pass selected category
                   'image': imageBase64, // Pass image as base64 string
                 });
               },
