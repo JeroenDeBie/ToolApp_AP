@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'dart:convert'; // Added for base64 decoding
 
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -39,7 +40,11 @@ class _MyHomePageState extends State<MyHomePage> {
               'description': data['description'] ?? 'No description',
               'availability': data['availability'] ?? false, // Ensure bool
               'image':
-                  data['image'] != null ? data['image'] as Uint8List : null,
+                  data['image'] != null
+                      ? base64Decode(
+                        data['image'] as String,
+                      ) // Decode base64 string
+                      : null,
               'price':
                   (data['price'] != null)
                       ? (data['price'] as num).toDouble()
@@ -56,12 +61,23 @@ class _MyHomePageState extends State<MyHomePage> {
 
   void _addItem(Map<String, dynamic> newItem) async {
     try {
+      // Ensure the image is stored as a base64 string in Firebase
+      if (newItem['image'] != null && newItem['image'] is Uint8List) {
+        newItem['image'] = base64Encode(newItem['image']);
+      }
+
       // Save the item to Firebase
       await FirebaseFirestore.instance.collection('tools').add(newItem);
 
       // Update the local list
       setState(() {
-        _items.add(newItem);
+        _items.add({
+          ...newItem,
+          'image':
+              newItem['image'] != null
+                  ? base64Decode(newItem['image']) // Decode for local use
+                  : null,
+        });
       });
     } catch (e) {
       print('Error adding item to Firebase: $e');
@@ -124,7 +140,8 @@ class _MyHomePageState extends State<MyHomePage> {
                             child:
                                 item['image'] != null
                                     ? Image.memory(
-                                      item['image'],
+                                      item['image']
+                                          as Uint8List, // Ensure Uint8List type
                                       width: 70,
                                       height: 200,
                                       fit:
@@ -141,7 +158,7 @@ class _MyHomePageState extends State<MyHomePage> {
                             style: const TextStyle(fontSize: 18),
                           ),
                           subtitle: Text(
-                            item['price']!.toString(),
+                            '€${item['price']!.toString()}',
                             style: const TextStyle(fontSize: 16),
                           ),
                         );

@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_application_1/map.dart';
+import 'dart:convert';
 
 class AddItems extends StatefulWidget {
   const AddItems({super.key});
@@ -122,11 +123,15 @@ class _AddItemsState extends State<AddItems> {
                       priceController.text.replaceAll(RegExp(r'[^0-9.]'), ''),
                     ) ??
                     0; // Parse price as a double
+                String? imageBase64 =
+                    _imageBytes != null
+                        ? base64Encode(_imageBytes!) // Properly encode image
+                        : null;
                 Navigator.pop(context, {
                   'description': description,
                   'price': price / 100, // Pass price as a double
                   'availability': _availability,
-                  'image': _imageBytes,
+                  'image': imageBase64, // Pass image as base64 string
                 });
               },
               child: const Text('Submit'),
