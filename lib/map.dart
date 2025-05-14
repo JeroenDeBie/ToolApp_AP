@@ -5,7 +5,12 @@ import 'package:url_launcher/url_launcher.dart';
 
 
 class MapWidget extends StatelessWidget{
-  const MapWidget({super.key});
+  final List<Marker> markers = [];
+  MapWidget({super.key});
+
+  void addMarker(Marker marker){
+    markers.add(marker);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -19,6 +24,9 @@ class MapWidget extends StatelessWidget{
           urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', // For demonstration only
           userAgentPackageName: 'com.example.app', // Add your app identifier
           // And many more recommended properties!
+        ),
+        MarkerLayer(
+        markers: markers
         ),
         RichAttributionWidget( // Include a stylish prebuilt attribution widget that meets all requirments
           attributions: [

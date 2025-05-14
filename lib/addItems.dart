@@ -18,6 +18,7 @@ class _AddItemsState extends State<AddItems> {
   Uint8List? _imageBytes;
   final ImagePicker _picker = ImagePicker();
   String _availability = 'beschikbaar'; // Default value
+  final map = MapWidget();
 
   final NumberFormat currencyFormat = NumberFormat.currency(
     locale: 'nl_NL',
@@ -67,7 +68,7 @@ class _AddItemsState extends State<AddItems> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Expanded(child: MapWidget()),
+            Expanded(child: map),
             TextField(
               controller: descriptionController,
               decoration: const InputDecoration(
