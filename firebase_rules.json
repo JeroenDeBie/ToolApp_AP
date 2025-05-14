@@ -1,0 +1,12 @@
+{
+  "rules": {
+    "tools": {
+      ".read": "auth != null", // Allow authenticated users to read
+      ".write": "auth != null" // Allow authenticated users to write
+    },
+    "reservations": {
+      ".read": "auth != null", // Allow authenticated users to read
+      ".write": "auth != null" // Allow authenticated users to write
+    }
+  }
+}

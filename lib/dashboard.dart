@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:convert';
 
 class Dashboard extends StatelessWidget {
   const Dashboard({super.key});
@@ -22,7 +24,12 @@ class Dashboard extends StatelessWidget {
               title: 'Reservations',
               icon: Icons.list,
               onTap: () {
-                // Navigate to items page
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ReservationsPage(),
+                  ),
+                );
               },
             ),
             _buildDashboardCard(
@@ -77,6 +84,58 @@ class Dashboard extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class ReservationsPage extends StatelessWidget {
+  const ReservationsPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Reservations'),
+        backgroundColor: Colors.lightGreen,
+      ),
+      body: StreamBuilder<QuerySnapshot>(
+        stream:
+            FirebaseFirestore.instance.collection('reservations').snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            return const Center(child: Text('Geen reserveringen gevonden.'));
+          }
+          final reservations = snapshot.data!.docs;
+          return ListView.builder(
+            itemCount: reservations.length,
+            itemBuilder: (context, index) {
+              final reservation =
+                  reservations[index].data() as Map<String, dynamic>;
+              return Card(
+                margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                child: ListTile(
+                  leading:
+                      reservation['image'] != null
+                          ? Image.memory(
+                            base64Decode(reservation['image']),
+                            width: 50,
+                            height: 50,
+                            fit: BoxFit.cover,
+                          )
+                          : const Icon(Icons.image_not_supported),
+                  title: Text(
+                    reservation['description'] ?? 'Geen beschrijving',
+                  ),
+                  subtitle: Text('€${reservation['price'] ?? '0.0'}'),
+                ),
+              );
+            },
+          );
+        },
       ),
     );
   }
