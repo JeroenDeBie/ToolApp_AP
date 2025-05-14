@@ -19,7 +19,7 @@ class Dashboard extends StatelessWidget {
           children: [
             _buildDashboardCard(
               context,
-              title: 'Items',
+              title: 'Reservations',
               icon: Icons.list,
               onTap: () {
                 // Navigate to items page
@@ -27,7 +27,7 @@ class Dashboard extends StatelessWidget {
             ),
             _buildDashboardCard(
               context,
-              title: 'Add Item',
+              title: 'Add Reservation',
               icon: Icons.add,
               onTap: () {
                 // Navigate to add item page

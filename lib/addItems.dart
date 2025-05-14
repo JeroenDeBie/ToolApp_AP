@@ -17,7 +17,7 @@ class _AddItemsState extends State<AddItems> {
   final TextEditingController priceController = TextEditingController();
   Uint8List? _imageBytes;
   final ImagePicker _picker = ImagePicker();
-  String _availability = 'beschikbaar'; // Default value
+  bool _availability = true; // Default value
 
   final NumberFormat currencyFormat = NumberFormat.currency(
     locale: 'nl_NL',
@@ -30,7 +30,8 @@ class _AddItemsState extends State<AddItems> {
       '',
     ); // Verwijder alles behalve cijfers
     if (cleanedValue.isNotEmpty) {
-      double parsedValue = double.parse(cleanedValue) / 100; // Zorg voor decimalen
+      double parsedValue =
+          double.parse(cleanedValue) / 100; // Zorg voor decimalen
       String formattedValue = currencyFormat.format(parsedValue);
       priceController.value = TextEditingValue(
         text: formattedValue,
@@ -87,17 +88,11 @@ class _AddItemsState extends State<AddItems> {
               onChanged: _formatPriceInput,
             ),
             const SizedBox(height: 16),
-            DropdownButtonFormField<String>(
+            DropdownButtonFormField<bool>(
               value: _availability,
               items: const [
-                DropdownMenuItem(
-                  value: 'beschikbaar',
-                  child: Text('Beschikbaar'),
-                ),
-                DropdownMenuItem(
-                  value: 'niet beschikbaar',
-                  child: Text('Niet Beschikbaar'),
-                ),
+                DropdownMenuItem(value: true, child: Text('Beschikbaar')),
+                DropdownMenuItem(value: false, child: Text('Niet Beschikbaar')),
               ],
               onChanged: (value) {
                 setState(() {
@@ -122,19 +117,14 @@ class _AddItemsState extends State<AddItems> {
             ElevatedButton(
               onPressed: () {
                 String description = descriptionController.text;
-                // String price = priceController.text.replaceAll(
-                //   RegExp(r'[^0-9.]'),
-                //   '',
-                // ); // Remove formatting without scaling
-                String price = currencyFormat.format(
-                   (double.tryParse(
-                         priceController.text.replaceAll(RegExp(r'[^0-9.]'), ''),
-                       ) ??
-                       0) / 100
-                 ); // Ensure proper formatting
+                double price =
+                    double.tryParse(
+                      priceController.text.replaceAll(RegExp(r'[^0-9.]'), ''),
+                    ) ??
+                    0; // Parse price as a double
                 Navigator.pop(context, {
                   'description': description,
-                  'price': price,
+                  'price': price / 100, // Pass price as a double
                   'availability': _availability,
                   'image': _imageBytes,
                 });

@@ -37,13 +37,21 @@ class ProductDetailPage extends StatelessWidget {
               'Prijs:',
               style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
-            Text(item['price']!, style: const TextStyle(fontSize: 18)),
+            Text(
+              '€${item['price']}',
+              style: const TextStyle(fontSize: 18),
+            ), // Display price as double
             const SizedBox(height: 16),
             Text(
               'Beschikbaarheid:',
               style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
-            Text(item['availability']!, style: const TextStyle(fontSize: 18)),
+            Text(
+              item['availability']
+                  ? 'Beschikbaar'
+                  : 'Niet Beschikbaar', // Display availability as bool
+              style: const TextStyle(fontSize: 18),
+            ),
           ],
         ),
       ),
