@@ -20,6 +20,22 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _passwordController = TextEditingController();
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
+  @override
+  void initState() {
+    super.initState();
+    // Check if user is already logged in
+    if (_auth.currentUser != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const MyHomePage(title: 'Tool App'),
+          ),
+        );
+      });
+    }
+  }
+
   Future<void> _login() async {
     try {
       await _auth.signInWithEmailAndPassword(
