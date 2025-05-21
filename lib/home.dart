@@ -1,6 +1,6 @@
 import 'dart:typed_data';
-import 'dart:convert'; // Added for base64 decoding
-
+import 'dart:convert';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_application_1/map.dart';
@@ -27,6 +27,7 @@ class _MyHomePageState extends State<MyHomePage> {
   final List<Map<String, dynamic>> _items = []; // Updated to include dynamic for image
   bool isAvailable = false;
   Categories? selectedCategory = Categories.All;
+  List<Marker> markers = [];
 
   @override
   void initState() {
@@ -126,7 +127,7 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
       body: Column(
         children: [
-          Expanded(child: MapWidget()),
+          Expanded(child: MapWidget(markers: markers)),
 
           Row(children: [
             Text("Show available items"),

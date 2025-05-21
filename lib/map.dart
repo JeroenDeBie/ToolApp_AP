@@ -5,12 +5,10 @@ import 'package:url_launcher/url_launcher.dart';
 
 
 class MapWidget extends StatelessWidget{
-  final List<Marker> markers = [];
-  MapWidget({super.key});
+  final List<Marker> markers;
+  final void Function(LatLng)? onTap;
 
-  void addMarker(Marker marker){
-    markers.add(marker);
-  }
+  const MapWidget({super.key, required this.markers, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -18,6 +16,9 @@ class MapWidget extends StatelessWidget{
       options: MapOptions(
         initialCenter: LatLng(51.509364, -0.128928), // Center the map over London
         initialZoom: 9.2,
+        onTap: (tapPosition, latlng) {
+          if (onTap != null) onTap!(latlng);
+        }
       ),
       children: [
         TileLayer( // Bring your own tiles

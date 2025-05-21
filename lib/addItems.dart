@@ -5,6 +5,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_application_1/map.dart';
 import 'dart:convert';
+import 'package:flutter_map/flutter_map.dart';
+
 
 enum Categories { Kitchen, Washing, Tools, Garden, Other }
 
@@ -20,10 +22,9 @@ class _AddItemsState extends State<AddItems> {
   final TextEditingController priceController = TextEditingController();
   Uint8List? _imageBytes;
   final ImagePicker _picker = ImagePicker();
-  final map = MapWidget();
   bool _availability = true; // Default value
-  Categories?
-  _selectedCategory; // Add a variable to store the selected category
+  Categories? _selectedCategory; // Add a variable to store the selected category
+  Marker? marker;
 
   final NumberFormat currencyFormat = NumberFormat.currency(
     locale: 'nl_NL',
@@ -74,7 +75,23 @@ class _AddItemsState extends State<AddItems> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Expanded(child: map),
+            Expanded(child: MapWidget(
+              markers: marker != null? [marker!]: [],
+              onTap: (latlng) {
+                setState(() {
+                  marker = new Marker(
+                    point: latlng,
+                    width: 40,
+                    height: 40,
+                    child: Icon(
+                      Icons.location_pin,
+                      color: Colors.red,
+                      size: 50,
+                    )
+                  );
+                });
+              }
+            )),
             TextField(
               controller: descriptionController,
               decoration: const InputDecoration(
