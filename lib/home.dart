@@ -23,6 +23,7 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   final List<Map<String, dynamic>> _items =
       []; // Updated to include dynamic for image
+  bool isChecked = false;
 
   @override
   void initState() {
@@ -89,6 +90,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final filteredItems = _items.where((item) => item['availability'] || !isChecked).toList();
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.title),
@@ -121,7 +123,13 @@ class _MyHomePageState extends State<MyHomePage> {
 
           Row(children: [
             Text("Show available items"),
-            CheckboxWidget(),
+            Checkbox(
+            value: isChecked,
+            onChanged: (bool? newValue) {
+              setState(() {
+                isChecked = newValue!;
+              });
+            }),
           ]),
 
           Expanded(
@@ -129,9 +137,9 @@ class _MyHomePageState extends State<MyHomePage> {
                 _items.isEmpty
                     ? const Center(child: Text('Geen items toegevoegd.'))
                     : ListView.builder(
-                      itemCount: _items.length,
+                      itemCount: filteredItems.length,
                       itemBuilder: (context, index) {
-                        final item = _items[index];
+                        final item = filteredItems[index];
                         return ListTile(
                           leading: GestureDetector(
                             behavior:
