@@ -3,13 +3,16 @@ import 'dart:convert'; // Added for base64 decoding
 
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_application_1/checkbox.dart';
 import 'package:flutter_application_1/map.dart';
 import 'productDetails.dart';
 import 'login.dart';
 import 'addItems.dart';
 import 'dashboard.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+
+
+enum Categories { Kitchen, Washing, Tools, Garden, Other, All }
+
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
@@ -21,9 +24,9 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  final List<Map<String, dynamic>> _items =
-      []; // Updated to include dynamic for image
-  bool isChecked = false;
+  final List<Map<String, dynamic>> _items = []; // Updated to include dynamic for image
+  bool isAvailable = false;
+  Categories? selectedCategory = Categories.All;
 
   @override
   void initState() {
@@ -90,7 +93,11 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final filteredItems = _items.where((item) => item['availability'] || !isChecked).toList();
+    final filteredItems = _items.
+    where((item) => item['availability'] || !isAvailable).
+    where((item) => item['category'] == selectedCategory?.name || selectedCategory == Categories.All).
+    toList();
+
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.title),
@@ -124,12 +131,35 @@ class _MyHomePageState extends State<MyHomePage> {
           Row(children: [
             Text("Show available items"),
             Checkbox(
-            value: isChecked,
+            value: isAvailable,
             onChanged: (bool? newValue) {
               setState(() {
-                isChecked = newValue!;
+                isAvailable = newValue!;
               });
             }),
+
+            Expanded(child: DropdownButtonFormField<Categories>(
+                value: selectedCategory,
+                items:
+                    Categories.values.map((category) {
+                      return DropdownMenuItem(
+                        value: category,
+                        child: Text(category.name),
+                      );
+                    }).toList(),
+                onChanged: (value) {
+                  if (value != null) {
+                    setState(() {
+                      selectedCategory = value;
+                    });
+                  }
+                },
+                decoration: const InputDecoration(
+                  labelText: 'Category',
+                  border: OutlineInputBorder(),
+                ),
+              )
+            ),
           ]),
 
           Expanded(
