@@ -35,6 +35,23 @@ class _MyHomePageState extends State<MyHomePage> {
     _fetchItems(); // Fetch items from Firebase on initialization
   }
 
+  void addMarker(double? latitude, double? longitude){
+    if (longitude != null && latitude != null) {
+      markers.add(
+        Marker(
+          point: LatLng(latitude, longitude),
+          width: 40,
+          height: 40,
+          alignment: Alignment.topCenter,
+          child: Icon(
+            Icons.location_pin,
+            color: Colors.red,
+            size: 50,
+          ),
+        ));
+    }
+  }
+
   Future<void> _fetchItems() async {
     try {
       final snapshot =
@@ -45,20 +62,21 @@ class _MyHomePageState extends State<MyHomePage> {
             final longitude = data['longitude'];
             final latitude = data['latitude'];
 
-            if (longitude != null && latitude != null) {
-              markers.add(
-                Marker(
-                  point: LatLng(latitude, longitude),
-                  width: 40,
-                  height: 40,
-                  alignment: Alignment.topCenter,
-                  child: Icon(
-                    Icons.location_pin,
-                    color: Colors.red,
-                    size: 50,
-                  ),
-                ));
-            }
+            addMarker(latitude, longitude);
+            // if (longitude != null && latitude != null) {
+            //   markers.add(
+            //     Marker(
+            //       point: LatLng(latitude, longitude),
+            //       width: 40,
+            //       height: 40,
+            //       alignment: Alignment.topCenter,
+            //       child: Icon(
+            //         Icons.location_pin,
+            //         color: Colors.red,
+            //         size: 50,
+            //       ),
+            //     ));
+            // }
 
             return {
               'description': data['description'] ?? 'No description',
@@ -92,6 +110,10 @@ class _MyHomePageState extends State<MyHomePage> {
         newItem['image'] = base64Encode(newItem['image']);
       }
 
+      final longitude = newItem['longitude'];
+      final latitude = newItem['latitude'];
+
+            addMarker(latitude, longitude);
       // Save the item to Firebase (ownerId is already included from AddItems)
       await FirebaseFirestore.instance.collection('tools').add(newItem);
 
