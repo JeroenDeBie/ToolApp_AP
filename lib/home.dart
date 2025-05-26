@@ -23,8 +23,7 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  final List<Map<String, dynamic>> _items =
-      []; // Updated to include dynamic for image
+  final List<Map<String, dynamic>> _items = [];
   bool isAvailable = false;
   Categories? selectedCategory = Categories.All;
   List<Marker> markers = [];
@@ -32,24 +31,25 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
     super.initState();
-    _fetchItems(); // Fetch items from Firebase on initialization
+    _fetchItems();
   }
 
-  void addMarker(double? latitude, double? longitude){
+  Marker? createMarker(double? latitude, double? longitude){
     if (longitude != null && latitude != null) {
-      markers.add(
-        Marker(
-          point: LatLng(latitude, longitude),
-          width: 40,
-          height: 40,
-          alignment: Alignment.topCenter,
-          child: Icon(
-            Icons.location_pin,
-            color: Colors.red,
-            size: 50,
-          ),
-        ));
+      return Marker(
+        point: LatLng(latitude, longitude),
+        width: 40,
+        height: 40,
+        alignment: Alignment.topCenter,
+        child: Icon(
+          Icons.location_pin,
+          color: Colors.red,
+          size: 50,
+        ),
+      );
     }
+
+    return null;
   }
 
   Future<void> _fetchItems() async {
@@ -62,23 +62,10 @@ class _MyHomePageState extends State<MyHomePage> {
             final longitude = data['longitude'];
             final latitude = data['latitude'];
 
-            addMarker(latitude, longitude);
-            // if (longitude != null && latitude != null) {
-            //   markers.add(
-            //     Marker(
-            //       point: LatLng(latitude, longitude),
-            //       width: 40,
-            //       height: 40,
-            //       alignment: Alignment.topCenter,
-            //       child: Icon(
-            //         Icons.location_pin,
-            //         color: Colors.red,
-            //         size: 50,
-            //       ),
-            //     ));
-            // }
+            // addMarker(latitude, longitude);
 
             return {
+              'marker': createMarker(latitude, longitude),
               'description': data['description'] ?? 'No description',
               'availability': data['availability'] ?? false, // Ensure bool
               'image':
@@ -113,7 +100,7 @@ class _MyHomePageState extends State<MyHomePage> {
       final longitude = newItem['longitude'];
       final latitude = newItem['latitude'];
 
-            addMarker(latitude, longitude);
+      // addMarker(latitude, longitude);
       // Save the item to Firebase (ownerId is already included from AddItems)
       await FirebaseFirestore.instance.collection('tools').add(newItem);
 
@@ -121,6 +108,7 @@ class _MyHomePageState extends State<MyHomePage> {
       setState(() {
         _items.add({
           ...newItem,
+          'marker': createMarker(latitude, longitude),
           'image':
               newItem['image'] != null
                   ? base64Decode(newItem['image']) // Decode for local use
@@ -172,7 +160,7 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
       body: Column(
         children: [
-          Expanded(child: MapWidget(markers: markers)),
+          Expanded(child: MapWidget(markers: _items.map((item) => item['marker']).where((marker) => marker != null).cast<Marker>().toList())),
 
           Row(
             children: [
