@@ -213,8 +213,17 @@ class ProductDetails extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Parse end date if present
+    // Parse start and end date if present
+    DateTime? startDate;
     DateTime? endDate;
+    if (reservation['reservationStart'] != null) {
+      try {
+        startDate =
+            (reservation['reservationStart'] is Timestamp)
+                ? (reservation['reservationStart'] as Timestamp).toDate()
+                : DateTime.tryParse(reservation['reservationStart'].toString());
+      } catch (_) {}
+    }
     if (reservation['reservationEnd'] != null) {
       try {
         endDate =
@@ -280,6 +289,14 @@ class ProductDetails extends StatelessWidget {
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
+            if (startDate != null)
+              Text(
+                'Start reservatie: ${startDate.day.toString().padLeft(2, '0')}-${startDate.month.toString().padLeft(2, '0')}-${startDate.year}',
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
             if (endDate != null)
               Text(
                 'Einde reservatie: ${endDate.day.toString().padLeft(2, '0')}-${endDate.month.toString().padLeft(2, '0')}-${endDate.year}',

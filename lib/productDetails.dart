@@ -18,21 +18,27 @@ class ProductDetailPage extends StatefulWidget {
 
 class _ProductDetailPageState extends State<ProductDetailPage> {
   late Map<String, dynamic> item;
+  DateTime? _selectedStartDate;
   DateTime? _selectedEndDate;
   bool _isCheckingReservation = false;
+
+  // Store reserved date ranges as pairs: [start, end]
+  List<List<DateTime>> _reservedRanges = [];
 
   @override
   void initState() {
     super.initState();
     item = Map<String, dynamic>.from(widget.item);
     _fetchLatestItemData();
+    _fetchReservedRanges();
   }
 
   Future<void> _fetchLatestItemData() async {
-    final querySnapshot = await FirebaseFirestore.instance
-        .collection('tools')
-        .where('description', isEqualTo: item['description'])
-        .get();
+    final querySnapshot =
+        await FirebaseFirestore.instance
+            .collection('tools')
+            .where('description', isEqualTo: item['description'])
+            .get();
 
     if (querySnapshot.docs.isNotEmpty) {
       final doc = querySnapshot.docs.first;
@@ -66,11 +72,64 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     }
   }
 
+  Future<void> _fetchReservedRanges() async {
+    final reservations =
+        await FirebaseFirestore.instance
+            .collection('reservations')
+            .where('toolDescription', isEqualTo: item['description'])
+            .get();
+
+    List<List<DateTime>> ranges = [];
+    for (var doc in reservations.docs) {
+      final data = doc.data();
+      DateTime? start;
+      DateTime? end;
+      final reservationStart = data['reservationStart'];
+      final reservationEnd = data['reservationEnd'];
+      if (reservationStart is Timestamp) {
+        start = reservationStart.toDate();
+      } else if (reservationStart is DateTime) {
+        start = reservationStart;
+      } else if (reservationStart is String) {
+        start = DateTime.tryParse(reservationStart);
+      }
+      if (reservationEnd is Timestamp) {
+        end = reservationEnd.toDate();
+      } else if (reservationEnd is DateTime) {
+        end = reservationEnd;
+      } else if (reservationEnd is String) {
+        end = DateTime.tryParse(reservationEnd);
+      }
+      if (start != null && end != null) {
+        // Only add if end is in the future
+        if (end.isAfter(DateTime.now().subtract(const Duration(days: 1)))) {
+          ranges.add([start, end]);
+        }
+      }
+    }
+    setState(() {
+      _reservedRanges = ranges;
+    });
+  }
+
+  // Helper to check if a date is in any reserved range
+  bool _isDateReserved(DateTime day) {
+    for (final range in _reservedRanges) {
+      final start = DateTime(range[0].year, range[0].month, range[0].day);
+      final end = DateTime(range[1].year, range[1].month, range[1].day);
+      if (!day.isBefore(start) && !day.isAfter(end)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   Future<bool> _isItemCurrentlyReserved() async {
-    final querySnapshot = await FirebaseFirestore.instance
-        .collection('tools')
-        .where('description', isEqualTo: item['description'])
-        .get();
+    final querySnapshot =
+        await FirebaseFirestore.instance
+            .collection('tools')
+            .where('description', isEqualTo: item['description'])
+            .get();
 
     if (querySnapshot.docs.isNotEmpty) {
       final doc = querySnapshot.docs.first;
@@ -94,18 +153,96 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     return false;
   }
 
-  Future<void> _pickReservationDate(BuildContext context) async {
-    // Set time to midnight for consistency
+  /// Checks if the selected reservation period overlaps with any existing reservation.
+  Future<bool> _isItemReservedForPeriod(
+    DateTime selectedStart,
+    DateTime selectedEnd,
+  ) async {
+    final reservations = await FirebaseFirestore.instance
+        .collection('reservations')
+        .where('toolDescription', isEqualTo: item['description'])
+        .get();
+
+    for (var doc in reservations.docs) {
+      final data = doc.data();
+      DateTime? start;
+      DateTime? end;
+      final reservationStart = data['reservationStart'];
+      final reservationEnd = data['reservationEnd'];
+      if (reservationStart is Timestamp) {
+        start = reservationStart.toDate();
+      } else if (reservationStart is DateTime) {
+        start = reservationStart;
+      } else if (reservationStart is String) {
+        start = DateTime.tryParse(reservationStart);
+      }
+      if (reservationEnd is Timestamp) {
+        end = reservationEnd.toDate();
+      } else if (reservationEnd is DateTime) {
+        end = reservationEnd;
+      } else if (reservationEnd is String) {
+        end = DateTime.tryParse(reservationEnd);
+      }
+      if (start != null && end != null) {
+        // Check for overlap: (startA <= endB) && (endA >= startB)
+        if (selectedStart.isBefore(end.add(const Duration(days: 1))) &&
+            selectedEnd.isAfter(start.subtract(const Duration(days: 1)))) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  Future<void> _pickReservationStartDate(BuildContext context) async {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    final lastDay = today.add(const Duration(days: 7));
+    final lastDay = today.add(const Duration(days: 30));
+    // Use first available day as initial date
+    final initial = _selectedStartDate != null && !_isDateReserved(_selectedStartDate!)
+        ? _selectedStartDate!
+        : _findFirstAvailableDay(today);
     final picked = await showDatePicker(
       context: context,
-      initialDate: today,
+      initialDate: initial,
       firstDate: today,
       lastDate: lastDay,
+      helpText: 'Selecteer de startdatum van de reservering',
+      selectableDayPredicate: (day) {
+        // Disable reserved days only
+        return !_isDateReserved(day);
+      },
+    );
+    if (picked != null) {
+      setState(() {
+        _selectedStartDate = picked;
+        // Reset end date if it's before start date
+        if (_selectedEndDate != null && _selectedEndDate!.isBefore(picked)) {
+          _selectedEndDate = null;
+        }
+      });
+    }
+  }
+
+  Future<void> _pickReservationEndDate(BuildContext context) async {
+    if (_selectedStartDate == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Selecteer eerst een startdatum!')),
+      );
+      return;
+    }
+    final lastDay = _selectedStartDate!.add(const Duration(days: 7));
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedEndDate ?? _selectedStartDate!,
+      firstDate: _selectedStartDate!,
+      lastDate: lastDay,
       helpText: 'Selecteer de einddatum van de reservering (max 7 dagen)',
-      // locale: const Locale('nl', 'NL'), // Remove this line for compatibility
+      selectableDayPredicate: (day) {
+        // Disable reserved days and days before start
+        if (day.isBefore(_selectedStartDate!)) return false;
+        return !_isDateReserved(day);
+      },
     );
     if (picked != null) {
       setState(() {
@@ -115,9 +252,11 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   }
 
   Future<void> _reserveItem(BuildContext context) async {
-    if (_selectedEndDate == null) {
+    if (_selectedStartDate == null || _selectedEndDate == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Selecteer eerst een einddatum!')),
+        const SnackBar(
+          content: Text('Selecteer eerst een start- en einddatum!'),
+        ),
       );
       return;
     }
@@ -125,10 +264,25 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       _isCheckingReservation = true;
     });
     try {
-      // Check if item is already reserved for the future
-      if (await _isItemCurrentlyReserved()) {
+      final selectedStart = DateTime(
+        _selectedStartDate!.year,
+        _selectedStartDate!.month,
+        _selectedStartDate!.day,
+      );
+      final selectedEnd = DateTime(
+        _selectedEndDate!.year,
+        _selectedEndDate!.month,
+        _selectedEndDate!.day,
+      );
+
+      // Check if item is already reserved for the selected period
+      if (await _isItemReservedForPeriod(selectedStart, selectedEnd)) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Dit item is al gereserveerd!')),
+          const SnackBar(
+            content: Text(
+              'Dit item is al gereserveerd voor (een deel van) deze periode!',
+            ),
+          ),
         );
         setState(() {
           _isCheckingReservation = false;
@@ -149,55 +303,70 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         return;
       }
 
-      // Update the item's availability in the tools collection
-      final querySnapshot =
-          await FirebaseFirestore.instance
-              .collection('tools')
-              .where('description', isEqualTo: item['description'])
-              .get();
+      // Check Firestore security rules: try-catch for permission errors
+      try {
+        final querySnapshot =
+            await FirebaseFirestore.instance
+                .collection('tools')
+                .where('description', isEqualTo: item['description'])
+                .get();
 
-      if (querySnapshot.docs.isNotEmpty) {
-        for (var doc in querySnapshot.docs) {
-          await FirebaseFirestore.instance
-              .collection('tools')
-              .doc(doc.id)
-              .update({
-                'availability': false,
-                'reservedBy': user.uid,
-                'reservationStart': Timestamp.fromDate(DateTime.now()),
-                'reservationEnd': Timestamp.fromDate(_selectedEndDate!),
-              });
-          await FirebaseFirestore.instance.collection('reservations').add({
-            'toolId': doc.id,
-            'userId': user.uid,
-            'reservationStart': Timestamp.fromDate(DateTime.now()),
-            'reservationEnd': Timestamp.fromDate(_selectedEndDate!),
-            'toolDescription': item['description'],
+        if (querySnapshot.docs.isNotEmpty) {
+          for (var doc in querySnapshot.docs) {
+            await FirebaseFirestore.instance
+                .collection('tools')
+                .doc(doc.id)
+                .update({
+                  'availability': false,
+                  'reservedBy': user.uid,
+                  'reservationStart': Timestamp.fromDate(selectedStart),
+                  'reservationEnd': Timestamp.fromDate(selectedEnd),
+                });
+            await FirebaseFirestore.instance.collection('reservations').add({
+              'toolId': doc.id,
+              'userId': user.uid,
+              'reservationStart': Timestamp.fromDate(selectedStart),
+              'reservationEnd': Timestamp.fromDate(selectedEnd),
+              'toolDescription': item['description'],
+            });
+          }
+          setState(() {
+            item['availability'] = false;
+            item['reservationEnd'] = Timestamp.fromDate(selectedEnd);
+            _isCheckingReservation = false;
           });
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Item niet gevonden in tools!')),
+          );
+          setState(() {
+            _isCheckingReservation = false;
+          });
+          return;
         }
-        setState(() {
-          item['availability'] = false;
-          item['reservationEnd'] = Timestamp.fromDate(_selectedEndDate!);
-          _isCheckingReservation = false;
-        });
-      } else {
+
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Item niet gevonden in tools!')),
+          const SnackBar(
+            content: Text('Item gereserveerd! Beschikbaarheid bijgewerkt.'),
+          ),
         );
+      } on FirebaseException catch (e) {
+        if (e.code == 'permission-denied') {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Onvoldoende rechten om deze actie uit te voeren.'),
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Fout bij reserveren: ${e.message}')),
+          );
+        }
         setState(() {
           _isCheckingReservation = false;
         });
         return;
       }
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Item gereserveerd! Beschikbaarheid bijgewerkt.'),
-        ),
-      );
-
-      // Optionally, do not pop immediately so user sees the update
-      // Navigator.pop(context);
     } catch (e) {
       setState(() {
         _isCheckingReservation = false;
@@ -209,23 +378,29 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   }
 
   bool get _canReserve {
-    // Defensive: ensure availability is a bool
-    final availability = item['availability'] is bool ? item['availability'] : true;
-    if (availability == false && item['reservationEnd'] != null) {
-      DateTime? end;
-      final val = item['reservationEnd'];
-      if (val is Timestamp) {
-        end = val.toDate();
-      } else if (val is DateTime) {
-        end = val;
-      } else if (val is String) {
-        end = DateTime.tryParse(val);
-      }
-      if (end != null && end.isAfter(DateTime.now())) {
+    // Always allow picking a future reservation, unless the selected period overlaps
+    return true;
+  }
+
+  // Helper to find the first available day after today
+  DateTime _findFirstAvailableDay(DateTime from) {
+    DateTime day = from;
+    while (_isDateReserved(day)) {
+      day = day.add(const Duration(days: 1));
+    }
+    return day;
+  }
+
+  // Helper: is every day in the next 7 days reserved?
+  bool get _isFullyReservedNext7Days {
+    final now = DateTime.now();
+    for (int i = 0; i < 7; i++) {
+      final day = DateTime(now.year, now.month, now.day).add(Duration(days: i));
+      if (!_isDateReserved(day)) {
         return false;
       }
     }
-    return availability == true;
+    return true;
   }
 
   @override
@@ -235,90 +410,114 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         title: const Text('Product Details'),
         backgroundColor: Colors.lightGreen,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            item['image'] != null && item['image'] is Uint8List
-                ? Image.memory(item['image'], height: 200)
-                : const Icon(Icons.image_not_supported, size: 100),
-            const SizedBox(height: 16),
-            Text(
-              'Beschrijving:',
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            Text(item['description']!, style: const TextStyle(fontSize: 18)),
-            const SizedBox(height: 16),
-            Text(
-              'Prijs:',
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            Text('€${item['price']}', style: const TextStyle(fontSize: 18)),
-            const SizedBox(height: 16),
-            Text(
-              'Beschikbaarheid:',
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            Text(
-              item['availability'] == true ? 'Beschikbaar' : 'Niet Beschikbaar',
-              style: const TextStyle(fontSize: 18),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Categorie:',
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            Text(
-              item['category'] ?? 'Geen categorie',
-              style: const TextStyle(fontSize: 18),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Reservering tot:',
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    (() {
-                      DateTime? displayDate = _selectedEndDate;
-                      if (displayDate == null && item['reservationEnd'] != null) {
-                        final val = item['reservationEnd'];
-                        if (val is Timestamp) {
-                          displayDate = val.toDate();
-                        } else if (val is DateTime) {
-                          displayDate = val;
-                        } else if (val is String) {
-                          displayDate = DateTime.tryParse(val);
-                        }
-                      }
-                      return displayDate != null
-                          ? DateFormat('dd-MM-yyyy').format(displayDate)
-                          : 'Geen einddatum geselecteerd';
-                    })(),
-                    style: const TextStyle(fontSize: 18),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              item['image'] != null && item['image'] is Uint8List
+                  ? Container(
+                      height: 200,
+                      width: double.infinity,
+                      clipBehavior: Clip.hardEdge,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Image.memory(
+                        item['image'],
+                        fit: BoxFit.cover,
+                      ),
+                    )
+                  : const Icon(Icons.image_not_supported, size: 100),
+              const SizedBox(height: 16),
+              Text(
+                'Beschrijving:',
+                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              Text(item['description']!, style: const TextStyle(fontSize: 18)),
+              const SizedBox(height: 16),
+              Text(
+                'Prijs:',
+                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              Text('€${item['price']}', style: const TextStyle(fontSize: 18)),
+              const SizedBox(height: 16),
+              Text(
+                'Beschikbaarheid:',
+                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              Text(
+                _isFullyReservedNext7Days ? 'Niet Beschikbaar' : 'Beschikbaar',
+                style: const TextStyle(fontSize: 18),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Categorie:',
+                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              Text(
+                item['category'] ?? 'Geen categorie',
+                style: const TextStyle(fontSize: 18),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Reservering van:',
+                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      _selectedStartDate != null
+                          ? DateFormat('dd-MM-yyyy').format(_selectedStartDate!)
+                          : 'Geen startdatum geselecteerd',
+                      style: const TextStyle(fontSize: 18),
+                    ),
                   ),
-                ),
-                ElevatedButton(
-                  onPressed:
-                      _canReserve && !_isCheckingReservation
-                          ? () => _pickReservationDate(context)
-                          : null,
-                  child: const Text('Kies datum'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed:
-                  _canReserve && !_isCheckingReservation
-                      ? () => _reserveItem(context)
-                      : null, // Disable button if not available
-              child: const Text('Reserveer Item'),
-            ),
-          ],
+                  ElevatedButton(
+                    onPressed:
+                        _canReserve && !_isCheckingReservation
+                            ? () => _pickReservationStartDate(context)
+                            : null,
+                    child: const Text('Kies startdatum'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Reservering tot:',
+                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      _selectedEndDate != null
+                          ? DateFormat('dd-MM-yyyy').format(_selectedEndDate!)
+                          : 'Geen einddatum geselecteerd',
+                      style: const TextStyle(fontSize: 18),
+                    ),
+                  ),
+                  ElevatedButton(
+                    onPressed:
+                        _canReserve && !_isCheckingReservation
+                            ? () => _pickReservationEndDate(context)
+                            : null,
+                    child: const Text('Kies einddatum'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed:
+                    _canReserve && !_isCheckingReservation
+                        ? () => _reserveItem(context)
+                        : null,
+                child: const Text('Reserveer Item'),
+              ),
+            ],
+          ),
         ),
       ),
     );
