@@ -6,7 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:flutter_application_1/map.dart';
 import 'dart:convert';
 import 'package:flutter_map/flutter_map.dart';
-
+import 'package:firebase_auth/firebase_auth.dart';
 
 enum Categories { Kitchen, Washing, Tools, Garden, Other }
 
@@ -23,7 +23,8 @@ class _AddItemsState extends State<AddItems> {
   Uint8List? _imageBytes;
   final ImagePicker _picker = ImagePicker();
   bool _availability = true; // Default value
-  Categories? _selectedCategory; // Add a variable to store the selected category
+  Categories?
+  _selectedCategory; // Add a variable to store the selected category
   Marker? marker;
 
   final NumberFormat currencyFormat = NumberFormat.currency(
@@ -75,23 +76,25 @@ class _AddItemsState extends State<AddItems> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Expanded(child: MapWidget(
-              markers: marker != null? [marker!]: [],
-              onTap: (latlng) {
-                setState(() {
-                  marker = new Marker(
-                    point: latlng,
-                    width: 40,
-                    height: 40,
-                    child: Icon(
-                      Icons.location_pin,
-                      color: Colors.red,
-                      size: 50,
-                    )
-                  );
-                });
-              }
-            )),
+            Expanded(
+              child: MapWidget(
+                markers: marker != null ? [marker!] : [],
+                onTap: (latlng) {
+                  setState(() {
+                    marker = new Marker(
+                      point: latlng,
+                      width: 40,
+                      height: 40,
+                      child: Icon(
+                        Icons.location_pin,
+                        color: Colors.red,
+                        size: 50,
+                      ),
+                    );
+                  });
+                },
+              ),
+            ),
             TextField(
               controller: descriptionController,
               decoration: const InputDecoration(
@@ -158,7 +161,7 @@ class _AddItemsState extends State<AddItems> {
             ),
             const SizedBox(height: 16),
             ElevatedButton(
-              onPressed: () {
+              onPressed: () async {
                 String description = descriptionController.text;
                 double price =
                     double.tryParse(
@@ -169,12 +172,15 @@ class _AddItemsState extends State<AddItems> {
                     _imageBytes != null
                         ? base64Encode(_imageBytes!) // Properly encode image
                         : null;
+                // Add ownerId to the item
+                final user = FirebaseAuth.instance.currentUser;
                 Navigator.pop(context, {
                   'description': description,
                   'price': price / 100, // Pass price as a double
                   'availability': _availability,
                   'category': _selectedCategory?.name, // Pass selected category
                   'image': imageBase64, // Pass image as base64 string
+                  'ownerId': user?.uid, // Add ownerId
                 });
               },
               child: const Text('Submit'),

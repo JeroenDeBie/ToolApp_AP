@@ -10,9 +10,7 @@ import 'addItems.dart';
 import 'dashboard.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-
 enum Categories { Kitchen, Washing, Tools, Garden, Other, All }
-
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
@@ -24,7 +22,8 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  final List<Map<String, dynamic>> _items = []; // Updated to include dynamic for image
+  final List<Map<String, dynamic>> _items =
+      []; // Updated to include dynamic for image
   bool isAvailable = false;
   Categories? selectedCategory = Categories.All;
   List<Marker> markers = [];
@@ -74,7 +73,7 @@ class _MyHomePageState extends State<MyHomePage> {
         newItem['image'] = base64Encode(newItem['image']);
       }
 
-      // Save the item to Firebase
+      // Save the item to Firebase (ownerId is already included from AddItems)
       await FirebaseFirestore.instance.collection('tools').add(newItem);
 
       // Update the local list
@@ -94,10 +93,15 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final filteredItems = _items.
-    where((item) => item['availability'] || !isAvailable).
-    where((item) => item['category'] == selectedCategory?.name || selectedCategory == Categories.All).
-    toList();
+    final filteredItems =
+        _items
+            .where((item) => item['availability'] || !isAvailable)
+            .where(
+              (item) =>
+                  item['category'] == selectedCategory?.name ||
+                  selectedCategory == Categories.All,
+            )
+            .toList();
 
     return Scaffold(
       appBar: AppBar(
@@ -129,39 +133,43 @@ class _MyHomePageState extends State<MyHomePage> {
         children: [
           Expanded(child: MapWidget(markers: markers)),
 
-          Row(children: [
-            Text("Show available items"),
-            Checkbox(
-            value: isAvailable,
-            onChanged: (bool? newValue) {
-              setState(() {
-                isAvailable = newValue!;
-              });
-            }),
-
-            Expanded(child: DropdownButtonFormField<Categories>(
-                value: selectedCategory,
-                items:
-                    Categories.values.map((category) {
-                      return DropdownMenuItem(
-                        value: category,
-                        child: Text(category.name),
-                      );
-                    }).toList(),
-                onChanged: (value) {
-                  if (value != null) {
-                    setState(() {
-                      selectedCategory = value;
-                    });
-                  }
+          Row(
+            children: [
+              Text("Show available items"),
+              Checkbox(
+                value: isAvailable,
+                onChanged: (bool? newValue) {
+                  setState(() {
+                    isAvailable = newValue!;
+                  });
                 },
-                decoration: const InputDecoration(
-                  labelText: 'Category',
-                  border: OutlineInputBorder(),
+              ),
+
+              Expanded(
+                child: DropdownButtonFormField<Categories>(
+                  value: selectedCategory,
+                  items:
+                      Categories.values.map((category) {
+                        return DropdownMenuItem(
+                          value: category,
+                          child: Text(category.name),
+                        );
+                      }).toList(),
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() {
+                        selectedCategory = value;
+                      });
+                    }
+                  },
+                  decoration: const InputDecoration(
+                    labelText: 'Category',
+                    border: OutlineInputBorder(),
+                  ),
                 ),
-              )
-            ),
-          ]),
+              ),
+            ],
+          ),
 
           Expanded(
             child:

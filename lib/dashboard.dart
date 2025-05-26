@@ -36,10 +36,13 @@ class Dashboard extends StatelessWidget {
             ),
             _buildDashboardCard(
               context,
-              title: 'Add Reservation',
+              title: 'mijn verhuurde items',
               icon: Icons.add,
               onTap: () {
-                // Navigate to add item page
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const MyItemsPage()),
+                );
               },
             ),
             _buildDashboardCard(
@@ -340,6 +343,208 @@ class ProductDetails extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class MyItemsPage extends StatelessWidget {
+  const MyItemsPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final String? userId = FirebaseAuth.instance.currentUser?.uid;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Mijn Verhuurde Items'),
+        backgroundColor: Colors.lightGreen,
+      ),
+      body: StreamBuilder<QuerySnapshot>(
+        stream:
+            FirebaseFirestore.instance
+                .collection('tools')
+                .where('ownerId', isEqualTo: userId)
+                .snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            return const Center(child: Text('Geen items gevonden.'));
+          }
+          final items = snapshot.data!.docs;
+          return ListView.builder(
+            itemCount: items.length,
+            itemBuilder: (context, index) {
+              final item = items[index].data() as Map<String, dynamic>;
+              final String toolId = items[index].id;
+              return FutureBuilder<QuerySnapshot>(
+                future:
+                    FirebaseFirestore.instance
+                        .collection('reservations')
+                        .where('toolId', isEqualTo: toolId)
+                        .get(),
+                builder: (context, reservationSnapshot) {
+                  // Determine if currently reserved
+                  bool isReserved = false;
+                  final now = DateTime.now();
+                  List<Map<String, dynamic>> reservationsList = [];
+                  if (reservationSnapshot.hasData &&
+                      reservationSnapshot.data!.docs.isNotEmpty) {
+                    for (var doc in reservationSnapshot.data!.docs) {
+                      final data = doc.data() as Map<String, dynamic>;
+                      reservationsList.add(data);
+                      DateTime? start;
+                      DateTime? end;
+                      final reservationStart = data['reservationStart'];
+                      final reservationEnd = data['reservationEnd'];
+                      if (reservationStart is Timestamp) {
+                        start = reservationStart.toDate();
+                      } else if (reservationStart is DateTime) {
+                        start = reservationStart;
+                      } else if (reservationStart is String) {
+                        start = DateTime.tryParse(reservationStart);
+                      }
+                      if (reservationEnd is Timestamp) {
+                        end = reservationEnd.toDate();
+                      } else if (reservationEnd is DateTime) {
+                        end = reservationEnd;
+                      } else if (reservationEnd is String) {
+                        end = DateTime.tryParse(reservationEnd);
+                      }
+                      if (start != null && end != null) {
+                        final today = DateTime(now.year, now.month, now.day);
+                        // Fix: check if today is in [start, end] (inclusive)
+                        if (!today.isBefore(start) && !today.isAfter(end)) {
+                          isReserved = true;
+                        }
+                      }
+                    }
+                  }
+                  return Card(
+                    margin: const EdgeInsets.symmetric(
+                      vertical: 8,
+                      horizontal: 16,
+                    ),
+                    child: ListTile(
+                      onTap: () {
+                        showModalBottomSheet(
+                          context: context,
+                          isScrollControlled: true,
+                          builder: (context) {
+                            return Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: SingleChildScrollView(
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'Reserveringen:',
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    if (reservationsList.isEmpty)
+                                      const Text('Geen reserveringen gevonden.'),
+                                    ...reservationsList.map((res) {
+                                      DateTime? start;
+                                      DateTime? end;
+                                      final reservationStart = res['reservationStart'];
+                                      final reservationEnd = res['reservationEnd'];
+                                      if (reservationStart is Timestamp) {
+                                        start = reservationStart.toDate();
+                                      } else if (reservationStart is DateTime) {
+                                        start = reservationStart;
+                                      } else if (reservationStart is String) {
+                                        start = DateTime.tryParse(reservationStart);
+                                      }
+                                      if (reservationEnd is Timestamp) {
+                                        end = reservationEnd.toDate();
+                                      } else if (reservationEnd is DateTime) {
+                                        end = reservationEnd;
+                                      } else if (reservationEnd is String) {
+                                        end = DateTime.tryParse(reservationEnd);
+                                      }
+                                      if (start != null && end != null) {
+                                        return Padding(
+                                          padding: const EdgeInsets.symmetric(vertical: 4.0),
+                                          child: Text(
+                                            'Van: ${start.day.toString().padLeft(2, '0')}-${start.month.toString().padLeft(2, '0')}-${start.year} '
+                                            'Tot: ${end.day.toString().padLeft(2, '0')}-${end.month.toString().padLeft(2, '0')}-${end.year}',
+                                            style: const TextStyle(fontSize: 16),
+                                          ),
+                                        );
+                                      } else {
+                                        return const SizedBox.shrink();
+                                      }
+                                    }).toList(),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        );
+                      },
+                      leading:
+                        item['image'] != null
+                          ? (() {
+                              try {
+                                Uint8List bytes;
+                                if (item['image'] is String) {
+                                  bytes = base64Decode(item['image']);
+                                } else if (item['image'] is List<int>) {
+                                  bytes = Uint8List.fromList(item['image']);
+                                } else if (item['image'] is List<dynamic>) {
+                                  bytes = Uint8List.fromList(
+                                    item['image'].cast<int>(),
+                                  );
+                                } else if (item['image'] is Uint8List) {
+                                  bytes = item['image'];
+                                } else {
+                                  throw Exception('Unknown image format');
+                                }
+                                return Image.memory(
+                                  bytes,
+                                  width: 50,
+                                  height: 50,
+                                  fit: BoxFit.cover,
+                                );
+                              } catch (_) {
+                                return const Icon(
+                                  Icons.broken_image,
+                                  size: 50,
+                                );
+                              }
+                            })()
+                          : const Icon(Icons.image_not_supported, size: 50),
+                      title: Text(item['description'] ?? 'Geen beschrijving'),
+                      subtitle: Text(
+                        isReserved
+                            ? 'Status: Gereserveerd'
+                            : 'Status: Niet gereserveerd',
+                        style: TextStyle(
+                          color: isReserved ? Colors.red : Colors.green,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      trailing:
+                        reservationsList.isNotEmpty
+                          ? const Icon(
+                              Icons.info_outline,
+                              color: Colors.lightGreen,
+                            )
+                          : null,
+                    ),
+                  );
+                },
+              );
+            },
+          );
+        },
       ),
     );
   }
