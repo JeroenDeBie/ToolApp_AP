@@ -27,6 +27,7 @@ class _MyHomePageState extends State<MyHomePage> {
   bool isAvailable = false;
   Categories? selectedCategory = Categories.All;
   List<Marker> markers = [];
+  Marker? currentPosition;
 
   @override
   void initState() {
@@ -160,7 +161,24 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
       body: Column(
         children: [
-          Expanded(child: MapWidget(markers: filteredItems.map((item) => item['marker']).where((marker) => marker != null).cast<Marker>().toList())),
+          Expanded(child: MapWidget(
+          markers: [...filteredItems.map((item) => item['marker']).where((marker) => marker != null).cast<Marker>(), if(currentPosition != null) currentPosition!],
+            onTap: (latlng) {
+              setState(() {
+                currentPosition = Marker(
+                  point: latlng,
+                  width: 40,
+                  height: 40,
+                  alignment: Alignment.topCenter,
+                  child: Icon(
+                    Icons.location_pin,
+                    color: Colors.blue,
+                    size: 50,
+                  ),
+                );
+              });
+            },
+          )),
 
           Row(
             children: [
