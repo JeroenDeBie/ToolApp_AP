@@ -160,7 +160,7 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
       body: Column(
         children: [
-          Expanded(child: MapWidget(markers: _items.map((item) => item['marker']).where((marker) => marker != null).cast<Marker>().toList())),
+          Expanded(child: MapWidget(markers: filteredItems.map((item) => item['marker']).where((marker) => marker != null).cast<Marker>().toList())),
 
           Row(
             children: [
