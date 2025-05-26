@@ -28,6 +28,7 @@ class _MyHomePageState extends State<MyHomePage> {
   Categories? selectedCategory = Categories.All;
   List<Marker> markers = [];
   Marker? currentPosition;
+  double allowedDistance = 32;
 
   @override
   void initState() {
@@ -131,6 +132,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   item['category'] == selectedCategory?.name ||
                   selectedCategory == Categories.All,
             )
+            .where((item) => currentPosition == null || item['marker'] == null || Distance()(item['marker']!.point, currentPosition!.point) <= allowedDistance * 1000)
             .toList();
 
     return Scaffold(
@@ -179,6 +181,18 @@ class _MyHomePageState extends State<MyHomePage> {
               });
             },
           )),
+          Slider(
+              value: allowedDistance,
+              min: 0,
+              max: 64,
+              divisions: 32,
+              label: "${allowedDistance.round().toString()} km",
+              onChanged: (double value) {
+                setState(() {
+                  allowedDistance = value;
+                });
+              },
+            ),
 
           Row(
             children: [
