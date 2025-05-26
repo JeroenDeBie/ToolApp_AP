@@ -7,6 +7,7 @@ import 'package:flutter_application_1/map.dart';
 import 'productDetails.dart';
 import 'login.dart';
 import 'addItems.dart';
+import 'package:latlong2/latlong.dart';
 import 'dashboard.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -41,6 +42,24 @@ class _MyHomePageState extends State<MyHomePage> {
       final fetchedItems =
           snapshot.docs.map((doc) {
             final data = doc.data();
+            final longitude = data['longitude'];
+            final latitude = data['latitude'];
+
+            if (longitude != null && latitude != null) {
+              markers.add(
+                Marker(
+                  point: LatLng(latitude, longitude),
+                  width: 40,
+                  height: 40,
+                  alignment: Alignment.topCenter,
+                  child: Icon(
+                    Icons.location_pin,
+                    color: Colors.red,
+                    size: 50,
+                  ),
+                ));
+            }
+
             return {
               'description': data['description'] ?? 'No description',
               'availability': data['availability'] ?? false, // Ensure bool

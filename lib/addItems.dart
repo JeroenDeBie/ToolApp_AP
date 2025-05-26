@@ -85,6 +85,7 @@ class _AddItemsState extends State<AddItems> {
                       point: latlng,
                       width: 40,
                       height: 40,
+                      alignment: Alignment.topCenter,
                       child: Icon(
                         Icons.location_pin,
                         color: Colors.red,
@@ -181,6 +182,8 @@ class _AddItemsState extends State<AddItems> {
                   'category': _selectedCategory?.name, // Pass selected category
                   'image': imageBase64, // Pass image as base64 string
                   'ownerId': user?.uid, // Add ownerId
+                  'longitude': marker?.point.longitude,
+                  'latitude': marker?.point.latitude
                 });
               },
               child: const Text('Submit'),
