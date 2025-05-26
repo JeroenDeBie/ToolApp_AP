@@ -29,6 +29,7 @@ class _MyHomePageState extends State<MyHomePage> {
   List<Marker> markers = [];
   Marker? currentPosition;
   double allowedDistance = 32;
+  double maxDistance = 64;
 
   @override
   void initState() {
@@ -124,6 +125,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
+    Distance getDistance = Distance();
     final filteredItems =
         _items
             .where((item) => item['availability'] || !isAvailable)
@@ -132,7 +134,13 @@ class _MyHomePageState extends State<MyHomePage> {
                   item['category'] == selectedCategory?.name ||
                   selectedCategory == Categories.All,
             )
-            .where((item) => currentPosition == null || item['marker'] == null || Distance()(item['marker']!.point, currentPosition!.point) <= allowedDistance * 1000)
+            .where((item) {
+              if (currentPosition == null || item['marker'] == null || allowedDistance == maxDistance) return true;
+
+              final distance = getDistance(item['marker']!.point, currentPosition!.point);
+
+              return distance <= allowedDistance * 1000;
+            })
             .toList();
 
     return Scaffold(
@@ -184,9 +192,9 @@ class _MyHomePageState extends State<MyHomePage> {
           Slider(
               value: allowedDistance,
               min: 0,
-              max: 64,
+              max: maxDistance,
               divisions: 32,
-              label: "${allowedDistance.round().toString()} km",
+              label: "${(allowedDistance != maxDistance)? allowedDistance.round().toString(): 'Infinite'} km", 
               onChanged: (double value) {
                 setState(() {
                   allowedDistance = value;
