@@ -158,10 +158,11 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     DateTime selectedStart,
     DateTime selectedEnd,
   ) async {
-    final reservations = await FirebaseFirestore.instance
-        .collection('reservations')
-        .where('toolDescription', isEqualTo: item['description'])
-        .get();
+    final reservations =
+        await FirebaseFirestore.instance
+            .collection('reservations')
+            .where('toolDescription', isEqualTo: item['description'])
+            .get();
 
     for (var doc in reservations.docs) {
       final data = doc.data();
@@ -199,9 +200,10 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     final today = DateTime(now.year, now.month, now.day);
     final lastDay = today.add(const Duration(days: 30));
     // Use first available day as initial date
-    final initial = _selectedStartDate != null && !_isDateReserved(_selectedStartDate!)
-        ? _selectedStartDate!
-        : _findFirstAvailableDay(today);
+    final initial =
+        _selectedStartDate != null && !_isDateReserved(_selectedStartDate!)
+            ? _selectedStartDate!
+            : _findFirstAvailableDay(today);
     final picked = await showDatePicker(
       context: context,
       initialDate: initial,
@@ -232,16 +234,57 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       return;
     }
     final lastDay = _selectedStartDate!.add(const Duration(days: 7));
+
+    // Find the first valid end date (including start date) that satisfies the predicate
+    DateTime initialEnd = _selectedEndDate ?? _selectedStartDate!;
+    bool isValidInitial(DateTime d) {
+      if (d.isBefore(_selectedStartDate!)) return false;
+      DateTime temp = _selectedStartDate!;
+      while (!temp.isAfter(d)) {
+        if (_isDateReserved(temp)) {
+          if (temp != _selectedStartDate!) return false;
+        }
+        temp = temp.add(const Duration(days: 1));
+      }
+      return true;
+    }
+
+    // If the initialEnd is not valid, find the next valid date
+    if (!isValidInitial(initialEnd)) {
+      DateTime candidate = _selectedStartDate!;
+      bool found = false;
+      while (!candidate.isAfter(lastDay)) {
+        if (isValidInitial(candidate)) {
+          initialEnd = candidate;
+          found = true;
+          break;
+        }
+        candidate = candidate.add(const Duration(days: 1));
+      }
+      if (!found) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Geen geldige einddatum beschikbaar.')),
+        );
+        return;
+      }
+    }
+
     final picked = await showDatePicker(
       context: context,
-      initialDate: _selectedEndDate ?? _selectedStartDate!,
+      initialDate: initialEnd,
       firstDate: _selectedStartDate!,
       lastDate: lastDay,
       helpText: 'Selecteer de einddatum van de reservering (max 7 dagen)',
       selectableDayPredicate: (day) {
-        // Disable reserved days and days before start
         if (day.isBefore(_selectedStartDate!)) return false;
-        return !_isDateReserved(day);
+        DateTime d = _selectedStartDate!;
+        while (!d.isAfter(day)) {
+          if (_isDateReserved(d)) {
+            if (d != _selectedStartDate!) return false;
+          }
+          d = d.add(const Duration(days: 1));
+        }
+        return true;
       },
     );
     if (picked != null) {
@@ -418,34 +461,40 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
             children: [
               item['image'] != null && item['image'] is Uint8List
                   ? Container(
-                      height: 200,
-                      width: double.infinity,
-                      clipBehavior: Clip.hardEdge,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Image.memory(
-                        item['image'],
-                        fit: BoxFit.cover,
-                      ),
-                    )
+                    height: 200,
+                    width: double.infinity,
+                    clipBehavior: Clip.hardEdge,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Image.memory(item['image'], fit: BoxFit.cover),
+                  )
                   : const Icon(Icons.image_not_supported, size: 100),
               const SizedBox(height: 16),
               Text(
                 'Beschrijving:',
-                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               Text(item['description']!, style: const TextStyle(fontSize: 18)),
               const SizedBox(height: 16),
               Text(
                 'Prijs:',
-                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               Text('€${item['price']}', style: const TextStyle(fontSize: 18)),
               const SizedBox(height: 16),
               Text(
                 'Beschikbaarheid:',
-                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               Text(
                 _isFullyReservedNext7Days ? 'Niet Beschikbaar' : 'Beschikbaar',
@@ -454,7 +503,10 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
               const SizedBox(height: 16),
               Text(
                 'Categorie:',
-                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               Text(
                 item['category'] ?? 'Geen categorie',
@@ -463,7 +515,10 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
               const SizedBox(height: 16),
               Text(
                 'Reservering van:',
-                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               Row(
                 children: [
@@ -487,7 +542,10 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
               const SizedBox(height: 8),
               Text(
                 'Reservering tot:',
-                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               Row(
                 children: [
