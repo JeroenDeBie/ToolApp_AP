@@ -8,6 +8,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'firebase_options.dart';
 import 'package:flutter_application_1/map.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 
 class ProductDetailPage extends StatefulWidget {
   final Map<String, dynamic> item;
@@ -437,8 +438,6 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    // Marker? marker = item['marker'];
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Product Details'),
@@ -450,10 +449,6 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // MapWidget(
-              //   markers: marker != null ? [marker] : []
-              // ),
-
               item['image'] != null && item['image'] is Uint8List
                   ? Container(
                     height: 200,
