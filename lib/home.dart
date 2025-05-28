@@ -284,7 +284,7 @@ class _MyHomePageState extends State<MyHomePage> {
                             style: const TextStyle(fontSize: 18),
                           ),
                           subtitle: Text(
-                            '€${item['price']!.toString()}',
+                            '€${item['price']!.toString()}${currentPosition != null? " - ${Distance()(item["marker"]?.point, currentPosition!.point)} meters": ""}',
                             style: const TextStyle(fontSize: 16),
                           ),
                         );
