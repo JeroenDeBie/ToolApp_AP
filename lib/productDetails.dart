@@ -6,9 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'firebase_options.dart';
-import 'package:flutter_application_1/map.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart';
+
 
 class ProductDetailPage extends StatefulWidget {
   final Map<String, dynamic> item;
@@ -438,7 +436,6 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    Marker? marker = item['marker'];
     double? lng = item['longitude'];
     double? lat = item['latitude'];
 
@@ -465,7 +462,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                   )
                   : const Icon(Icons.image_not_supported, size: 100),
               const SizedBox(height: 16),
-              Text("${lng != null && lat != null? '${lng}, ${lat}': ''}"),
+              Text(lng != null && lat != null? 'Location: ${lng}, ${lat}': ''),
               Text(
                 'Beschrijving:',
                 style: const TextStyle(
