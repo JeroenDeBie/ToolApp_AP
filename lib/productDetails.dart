@@ -438,6 +438,10 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
 
   @override
   Widget build(BuildContext context) {
+    Marker? marker = item['marker'];
+    double? lng = item['longitude'];
+    double? lat = item['latitude'];
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Product Details'),
@@ -461,6 +465,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                   )
                   : const Icon(Icons.image_not_supported, size: 100),
               const SizedBox(height: 16),
+              Text("${lng != null && lat != null? '${lng}, ${lat}': ''}"),
               Text(
                 'Beschrijving:',
                 style: const TextStyle(
