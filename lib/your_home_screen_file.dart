@@ -37,7 +37,6 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       firstDate: today,
       lastDate: lastDay,
       helpText: 'Selecteer de einddatum van de reservering (max 7 dagen)',
-      // locale: const Locale('nl', 'NL'), // Remove this line for compatibility
     );
     if (picked != null) {
       setState(() {
@@ -64,7 +63,6 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         return;
       }
 
-      // Update the item's availability in the tools collection
       final querySnapshot =
           await FirebaseFirestore.instance
               .collection('tools')
@@ -73,7 +71,6 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
 
       if (querySnapshot.docs.isNotEmpty) {
         for (var doc in querySnapshot.docs) {
-          // Add reservation info to a subcollection or a separate collection
           await FirebaseFirestore.instance
               .collection('tools')
               .doc(doc.id)
@@ -83,7 +80,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                 'reservationStart': Timestamp.fromDate(DateTime.now()),
                 'reservationEnd': Timestamp.fromDate(_selectedEndDate!),
               });
-          // Optionally, add a reservation record for tracking
+
           await FirebaseFirestore.instance.collection('reservations').add({
             'toolId': doc.id,
             'userId': user.uid,
@@ -92,7 +89,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
             'toolDescription': item['description'],
           });
         }
-        // Update local state so UI updates instantly
+
         setState(() {
           item['availability'] = false;
         });
@@ -108,9 +105,6 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
           content: Text('Item gereserveerd! Beschikbaarheid bijgewerkt.'),
         ),
       );
-
-      // Optionally, do not pop immediately so user sees the update
-      // Navigator.pop(context);
     } catch (e) {
       ScaffoldMessenger.of(
         context,

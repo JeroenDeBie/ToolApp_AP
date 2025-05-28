@@ -37,18 +37,14 @@ class _MyHomePageState extends State<MyHomePage> {
     _fetchItems();
   }
 
-  Marker? createMarker(double? latitude, double? longitude){
+  Marker? createMarker(double? latitude, double? longitude) {
     if (longitude != null && latitude != null) {
       return Marker(
         point: LatLng(latitude, longitude),
         width: 40,
         height: 40,
         alignment: Alignment.topCenter,
-        child: Icon(
-          Icons.location_pin,
-          color: Colors.red,
-          size: 50,
-        ),
+        child: Icon(Icons.location_pin, color: Colors.red, size: 50),
       );
     }
 
@@ -95,7 +91,6 @@ class _MyHomePageState extends State<MyHomePage> {
 
   void _addItem(Map<String, dynamic> newItem) async {
     try {
-      // Ensure the image is stored as a base64 string in Firebase
       if (newItem['image'] != null && newItem['image'] is Uint8List) {
         newItem['image'] = base64Encode(newItem['image']);
       }
@@ -104,18 +99,14 @@ class _MyHomePageState extends State<MyHomePage> {
       final latitude = newItem['latitude'];
 
       // addMarker(latitude, longitude);
-      // Save the item to Firebase (ownerId is already included from AddItems)
       await FirebaseFirestore.instance.collection('tools').add(newItem);
 
-      // Update the local list
       setState(() {
         _items.add({
           ...newItem,
           'marker': createMarker(latitude, longitude),
           'image':
-              newItem['image'] != null
-                  ? base64Decode(newItem['image']) // Decode for local use
-                  : null,
+              newItem['image'] != null ? base64Decode(newItem['image']) : null,
         });
       });
     } catch (e) {
@@ -135,9 +126,15 @@ class _MyHomePageState extends State<MyHomePage> {
                   selectedCategory == Categories.All,
             )
             .where((item) {
-              if (currentPosition == null || item['marker'] == null || allowedDistance == maxDistance) return true;
+              if (currentPosition == null ||
+                  item['marker'] == null ||
+                  allowedDistance == maxDistance)
+                return true;
 
-              final distance = getDistance(item['marker']!.point, currentPosition!.point);
+              final distance = getDistance(
+                item['marker']!.point,
+                currentPosition!.point,
+              );
 
               return distance <= allowedDistance * 1000;
             })
@@ -171,36 +168,45 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
       body: Column(
         children: [
-          Expanded(child: MapWidget(
-          markers: [...filteredItems.map((item) => item['marker']).where((marker) => marker != null).cast<Marker>(), if(currentPosition != null) currentPosition!],
-            onTap: (latlng) {
-              setState(() {
-                currentPosition = Marker(
-                  point: latlng,
-                  width: 40,
-                  height: 40,
-                  alignment: Alignment.topCenter,
-                  child: Icon(
-                    Icons.location_pin,
-                    color: Colors.blue,
-                    size: 50,
-                  ),
-                );
-              });
-            },
-          )),
-          Slider(
-              value: allowedDistance,
-              min: 0,
-              max: maxDistance,
-              divisions: 32,
-              label: "${(allowedDistance != maxDistance)? allowedDistance.round().toString(): 'Infinite'} km", 
-              onChanged: (double value) {
+          Expanded(
+            child: MapWidget(
+              markers: [
+                ...filteredItems
+                    .map((item) => item['marker'])
+                    .where((marker) => marker != null)
+                    .cast<Marker>(),
+                if (currentPosition != null) currentPosition!,
+              ],
+              onTap: (latlng) {
                 setState(() {
-                  allowedDistance = value;
+                  currentPosition = Marker(
+                    point: latlng,
+                    width: 40,
+                    height: 40,
+                    alignment: Alignment.topCenter,
+                    child: Icon(
+                      Icons.location_pin,
+                      color: Colors.blue,
+                      size: 50,
+                    ),
+                  );
                 });
               },
             ),
+          ),
+          Slider(
+            value: allowedDistance,
+            min: 0,
+            max: maxDistance,
+            divisions: 32,
+            label:
+                "${(allowedDistance != maxDistance) ? allowedDistance.round().toString() : 'Infinite'} km",
+            onChanged: (double value) {
+              setState(() {
+                allowedDistance = value;
+              });
+            },
+          ),
 
           Row(
             children: [
@@ -250,9 +256,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         final item = filteredItems[index];
                         return ListTile(
                           leading: GestureDetector(
-                            behavior:
-                                HitTestBehavior
-                                    .translucent, // Ensure taps are detected
+                            behavior: HitTestBehavior.translucent,
                             onTap: () {
                               Navigator.of(context).push(
                                 MaterialPageRoute(
@@ -265,13 +269,10 @@ class _MyHomePageState extends State<MyHomePage> {
                             child:
                                 item['image'] != null
                                     ? Image.memory(
-                                      item['image']
-                                          as Uint8List, // Ensure Uint8List type
+                                      item['image'] as Uint8List,
                                       width: 70,
                                       height: 200,
-                                      fit:
-                                          BoxFit
-                                              .cover, // Ensure the image fits properly
+                                      fit: BoxFit.cover,
                                     )
                                     : const Icon(
                                       Icons.image_not_supported,
@@ -297,7 +298,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 MaterialPageRoute(builder: (context) => const AddItems()),
               );
               if (newItem != null) {
-                _addItem(newItem); // Save item locally and in Firebase
+                _addItem(newItem);
               }
             },
             child: const Text('Voeg item Toe'),

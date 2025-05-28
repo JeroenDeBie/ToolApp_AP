@@ -154,7 +154,6 @@ class ReservationsPage extends StatelessWidget {
                     child: ListTile(
                       leading:
                           reservation['image'] != null
-                              // Use Uint8List for image bytes
                               ? Image.memory(
                                 Uint8List.fromList(
                                   List<int>.from(reservation['image']),
@@ -216,7 +215,6 @@ class ProductDetails extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Parse start and end date if present
     DateTime? startDate;
     DateTime? endDate;
     if (reservation['reservationStart'] != null) {
@@ -242,7 +240,6 @@ class ProductDetails extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Replace the image display with error handling
             Builder(
               builder: (context) {
                 final imageData = toolData['image'];
@@ -250,7 +247,6 @@ class ProductDetails extends StatelessWidget {
                   try {
                     Uint8List bytes;
                     if (imageData is String) {
-                      // Try to decode as base64 string
                       bytes = base64Decode(imageData);
                     } else if (imageData is List<int>) {
                       bytes = Uint8List.fromList(imageData);
@@ -317,7 +313,6 @@ class ProductDetails extends StatelessWidget {
                   foregroundColor: Colors.white,
                 ),
                 onPressed: () async {
-                  // Cancel reservation and set tool available
                   await FirebaseFirestore.instance
                       .collection('reservations')
                       .doc(reservationId)
@@ -386,7 +381,6 @@ class MyItemsPage extends StatelessWidget {
                         .where('toolId', isEqualTo: toolId)
                         .get(),
                 builder: (context, reservationSnapshot) {
-                  // Determine if currently reserved
                   bool isReserved = false;
                   final now = DateTime.now();
                   List<Map<String, dynamic>> reservationsList = [];
@@ -414,9 +408,19 @@ class MyItemsPage extends StatelessWidget {
                         end = DateTime.tryParse(reservationEnd);
                       }
                       if (start != null && end != null) {
-                        final today = DateTime(now.year, now.month, now.day);
-                        // Fix: check if today is in [start, end] (inclusive)
-                        if (!today.isBefore(start) && !today.isAfter(end)) {
+                        final today = DateTime.now().toUtc();
+                        final startDay = DateTime.utc(
+                          start.year,
+                          start.month,
+                          start.day,
+                        );
+                        final endDay = DateTime.utc(
+                          end.year,
+                          end.month,
+                          end.day,
+                        );
+                        if (!today.isBefore(startDay) &&
+                            !today.isAfter(endDay)) {
                           isReserved = true;
                         }
                       }
@@ -449,18 +453,24 @@ class MyItemsPage extends StatelessWidget {
                                     ),
                                     const SizedBox(height: 8),
                                     if (reservationsList.isEmpty)
-                                      const Text('Geen reserveringen gevonden.'),
+                                      const Text(
+                                        'Geen reserveringen gevonden.',
+                                      ),
                                     ...reservationsList.map((res) {
                                       DateTime? start;
                                       DateTime? end;
-                                      final reservationStart = res['reservationStart'];
-                                      final reservationEnd = res['reservationEnd'];
+                                      final reservationStart =
+                                          res['reservationStart'];
+                                      final reservationEnd =
+                                          res['reservationEnd'];
                                       if (reservationStart is Timestamp) {
                                         start = reservationStart.toDate();
                                       } else if (reservationStart is DateTime) {
                                         start = reservationStart;
                                       } else if (reservationStart is String) {
-                                        start = DateTime.tryParse(reservationStart);
+                                        start = DateTime.tryParse(
+                                          reservationStart,
+                                        );
                                       }
                                       if (reservationEnd is Timestamp) {
                                         end = reservationEnd.toDate();
@@ -471,17 +481,57 @@ class MyItemsPage extends StatelessWidget {
                                       }
                                       if (start != null && end != null) {
                                         return Padding(
-                                          padding: const EdgeInsets.symmetric(vertical: 4.0),
+                                          padding: const EdgeInsets.symmetric(
+                                            vertical: 4.0,
+                                          ),
                                           child: Text(
                                             'Van: ${start.day.toString().padLeft(2, '0')}-${start.month.toString().padLeft(2, '0')}-${start.year} '
                                             'Tot: ${end.day.toString().padLeft(2, '0')}-${end.month.toString().padLeft(2, '0')}-${end.year}',
-                                            style: const TextStyle(fontSize: 16),
+                                            style: const TextStyle(
+                                              fontSize: 16,
+                                            ),
                                           ),
                                         );
                                       } else {
                                         return const SizedBox.shrink();
                                       }
                                     }).toList(),
+                                    const SizedBox(height: 16),
+                                    ElevatedButton.icon(
+                                      icon: const Icon(Icons.delete),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.red,
+                                        foregroundColor: Colors.white,
+                                      ),
+                                      onPressed:
+                                          isReserved
+                                              ? null // Disable if reserved
+                                              : () async {
+                                                // Delete all reservations for this tool
+                                                for (var doc
+                                                    in reservationSnapshot
+                                                        .data!
+                                                        .docs) {
+                                                  await doc.reference.delete();
+                                                }
+                                                // Delete the tool itself
+                                                await FirebaseFirestore.instance
+                                                    .collection('tools')
+                                                    .doc(toolId)
+                                                    .delete();
+                                                Navigator.pop(context);
+                                                ScaffoldMessenger.of(
+                                                  context,
+                                                ).showSnackBar(
+                                                  const SnackBar(
+                                                    content: Text(
+                                                      'Item verwijderd',
+                                                    ),
+                                                  ),
+                                                );
+                                              },
+                                      label: const Text('Verwijder item'),
+                                    ),
                                   ],
                                 ),
                               ),
@@ -490,37 +540,37 @@ class MyItemsPage extends StatelessWidget {
                         );
                       },
                       leading:
-                        item['image'] != null
-                          ? (() {
-                              try {
-                                Uint8List bytes;
-                                if (item['image'] is String) {
-                                  bytes = base64Decode(item['image']);
-                                } else if (item['image'] is List<int>) {
-                                  bytes = Uint8List.fromList(item['image']);
-                                } else if (item['image'] is List<dynamic>) {
-                                  bytes = Uint8List.fromList(
-                                    item['image'].cast<int>(),
+                          item['image'] != null
+                              ? (() {
+                                try {
+                                  Uint8List bytes;
+                                  if (item['image'] is String) {
+                                    bytes = base64Decode(item['image']);
+                                  } else if (item['image'] is List<int>) {
+                                    bytes = Uint8List.fromList(item['image']);
+                                  } else if (item['image'] is List<dynamic>) {
+                                    bytes = Uint8List.fromList(
+                                      item['image'].cast<int>(),
+                                    );
+                                  } else if (item['image'] is Uint8List) {
+                                    bytes = item['image'];
+                                  } else {
+                                    throw Exception('Unknown image format');
+                                  }
+                                  return Image.memory(
+                                    bytes,
+                                    width: 50,
+                                    height: 50,
+                                    fit: BoxFit.cover,
                                   );
-                                } else if (item['image'] is Uint8List) {
-                                  bytes = item['image'];
-                                } else {
-                                  throw Exception('Unknown image format');
+                                } catch (_) {
+                                  return const Icon(
+                                    Icons.broken_image,
+                                    size: 50,
+                                  );
                                 }
-                                return Image.memory(
-                                  bytes,
-                                  width: 50,
-                                  height: 50,
-                                  fit: BoxFit.cover,
-                                );
-                              } catch (_) {
-                                return const Icon(
-                                  Icons.broken_image,
-                                  size: 50,
-                                );
-                              }
-                            })()
-                          : const Icon(Icons.image_not_supported, size: 50),
+                              })()
+                              : const Icon(Icons.image_not_supported, size: 50),
                       title: Text(item['description'] ?? 'Geen beschrijving'),
                       subtitle: Text(
                         isReserved
@@ -532,12 +582,12 @@ class MyItemsPage extends StatelessWidget {
                         ),
                       ),
                       trailing:
-                        reservationsList.isNotEmpty
-                          ? const Icon(
-                              Icons.info_outline,
-                              color: Colors.lightGreen,
-                            )
-                          : null,
+                          reservationsList.isNotEmpty
+                              ? const Icon(
+                                Icons.info_outline,
+                                color: Colors.lightGreen,
+                              )
+                              : null,
                     ),
                   );
                 },

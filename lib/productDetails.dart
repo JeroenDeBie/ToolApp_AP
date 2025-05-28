@@ -22,7 +22,6 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   DateTime? _selectedEndDate;
   bool _isCheckingReservation = false;
 
-  // Store reserved date ranges as pairs: [start, end]
   List<List<DateTime>> _reservedRanges = [];
 
   @override
@@ -44,13 +43,12 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       final doc = querySnapshot.docs.first;
       final data = doc.data();
       setState(() {
-        // Preserve the original image if present
         final originalImage = item['image'];
         item = Map<String, dynamic>.from(data);
         if (originalImage != null) {
           item['image'] = originalImage;
         }
-        // Defensive: ensure required fields exist and are the right type
+
         if (!item.containsKey('availability') || item['availability'] == null) {
           item['availability'] = true;
         }
@@ -112,7 +110,6 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     });
   }
 
-  // Helper to check if a date is in any reserved range
   bool _isDateReserved(DateTime day) {
     for (final range in _reservedRanges) {
       final start = DateTime(range[0].year, range[0].month, range[0].day);
@@ -153,7 +150,6 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     return false;
   }
 
-  /// Checks if the selected reservation period overlaps with any existing reservation.
   Future<bool> _isItemReservedForPeriod(
     DateTime selectedStart,
     DateTime selectedEnd,
@@ -185,7 +181,6 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         end = DateTime.tryParse(reservationEnd);
       }
       if (start != null && end != null) {
-        // Check for overlap: (startA <= endB) && (endA >= startB)
         if (selectedStart.isBefore(end.add(const Duration(days: 1))) &&
             selectedEnd.isAfter(start.subtract(const Duration(days: 1)))) {
           return true;
@@ -211,14 +206,12 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       lastDate: lastDay,
       helpText: 'Selecteer de startdatum van de reservering',
       selectableDayPredicate: (day) {
-        // Disable reserved days only
         return !_isDateReserved(day);
       },
     );
     if (picked != null) {
       setState(() {
         _selectedStartDate = picked;
-        // Reset end date if it's before start date
         if (_selectedEndDate != null && _selectedEndDate!.isBefore(picked)) {
           _selectedEndDate = null;
         }
@@ -235,7 +228,6 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     }
     final lastDay = _selectedStartDate!.add(const Duration(days: 7));
 
-    // Find the first valid end date (including start date) that satisfies the predicate
     DateTime initialEnd = _selectedEndDate ?? _selectedStartDate!;
     bool isValidInitial(DateTime d) {
       if (d.isBefore(_selectedStartDate!)) return false;
@@ -249,7 +241,6 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       return true;
     }
 
-    // If the initialEnd is not valid, find the next valid date
     if (!isValidInitial(initialEnd)) {
       DateTime candidate = _selectedStartDate!;
       bool found = false;
@@ -318,7 +309,6 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         _selectedEndDate!.day,
       );
 
-      // Check if item is already reserved for the selected period
       if (await _isItemReservedForPeriod(selectedStart, selectedEnd)) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -421,11 +411,9 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   }
 
   bool get _canReserve {
-    // Always allow picking a future reservation, unless the selected period overlaps
     return true;
   }
 
-  // Helper to find the first available day after today
   DateTime _findFirstAvailableDay(DateTime from) {
     DateTime day = from;
     while (_isDateReserved(day)) {
@@ -434,7 +422,6 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     return day;
   }
 
-  // Helper: is every day in the next 7 days reserved?
   bool get _isFullyReservedNext7Days {
     final now = DateTime.now();
     for (int i = 0; i < 7; i++) {

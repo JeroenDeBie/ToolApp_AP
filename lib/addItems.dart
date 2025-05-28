@@ -22,9 +22,8 @@ class _AddItemsState extends State<AddItems> {
   final TextEditingController priceController = TextEditingController();
   Uint8List? _imageBytes;
   final ImagePicker _picker = ImagePicker();
-  bool _availability = true; // Default value
-  Categories?
-  _selectedCategory; // Add a variable to store the selected category
+  bool _availability = true;
+  Categories? _selectedCategory;
   Marker? marker;
 
   final NumberFormat currencyFormat = NumberFormat.currency(
@@ -168,22 +167,20 @@ class _AddItemsState extends State<AddItems> {
                     double.tryParse(
                       priceController.text.replaceAll(RegExp(r'[^0-9]'), ''),
                     ) ??
-                    0; // Parse price as a double
+                    0;
                 String? imageBase64 =
-                    _imageBytes != null
-                        ? base64Encode(_imageBytes!) // Properly encode image
-                        : null;
-                // Add ownerId to the item
+                    _imageBytes != null ? base64Encode(_imageBytes!) : null;
+
                 final user = FirebaseAuth.instance.currentUser;
                 Navigator.pop(context, {
                   'description': description,
-                  'price': price / 100, // Pass price as a double
+                  'price': price / 100,
                   'availability': _availability,
-                  'category': _selectedCategory?.name, // Pass selected category
-                  'image': imageBase64, // Pass image as base64 string
-                  'ownerId': user?.uid, // Add ownerId
+                  'category': _selectedCategory?.name,
+                  'image': imageBase64,
+                  'ownerId': user?.uid,
                   'longitude': marker?.point.longitude,
-                  'latitude': marker?.point.latitude
+                  'latitude': marker?.point.latitude,
                 });
               },
               child: const Text('Submit'),
