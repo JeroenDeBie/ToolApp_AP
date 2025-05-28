@@ -10,6 +10,7 @@ import 'addItems.dart';
 import 'package:latlong2/latlong.dart';
 import 'dashboard.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:geolocator/geolocator.dart';
 
 enum Categories { Kitchen, Washing, Tools, Garden, Other, All }
 
@@ -35,6 +36,13 @@ class _MyHomePageState extends State<MyHomePage> {
   void initState() {
     super.initState();
     _fetchItems();
+    this.getCurrentPos();
+  }
+
+  Future<void> getCurrentPos() async {
+    Position position = await Geolocator.getCurrentPosition();
+    this.currentPosition = createMarker(position.latitude, position.longitude);
+
   }
 
   Marker? createMarker(double? latitude, double? longitude) {
